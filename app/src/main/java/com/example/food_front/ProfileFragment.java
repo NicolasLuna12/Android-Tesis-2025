@@ -80,6 +80,16 @@ public class ProfileFragment extends Fragment {
         // Encontrar el TextView de "Datos personales"
         TextView personalData = view.findViewById(R.id.personal_data);
 
+        // Añadir el listener de clic para "Datos personales"
+        personalData.setOnClickListener(v -> {
+            // Navegar al fragmento de datos personales
+            PersonalDataFragment personalDataFragment = new PersonalDataFragment();
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container_view, personalDataFragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         // Encontrar el TextView de "Cerrar sesion"
         TextView closeSession = view.findViewById(R.id.logout);
 
