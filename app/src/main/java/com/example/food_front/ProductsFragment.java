@@ -55,12 +55,19 @@ public class ProductsFragment extends Fragment {
         });
 
         recyclerView.setAdapter(adapter);
-        cargarProductos();
+
+        // Obtener el id de la categoría desde los argumentos (si existe)
+        int categoriaId = 0;
+        if (getArguments() != null) {
+            categoriaId = getArguments().getInt("categoria_id", 0);
+        }
+        cargarProductos(categoriaId);
 
         return view;
     }
 
-    private void cargarProductos() {
+    // Modificado para recibir el id de la categoría
+    private void cargarProductos(int categoriaId) {
         String url = "https://backmobile1.onrender.com/api/producto/";
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -81,10 +88,13 @@ public class ProductsFragment extends Fragment {
                                 String descripcion = jsonObject.getString("descripcion");
                                 double precio = jsonObject.getDouble("precio");
                                 String imagenUrl = jsonObject.getString("imageURL");
+                                int id_categoria = jsonObject.has("id_categoria") ? jsonObject.getInt("id_categoria") : 0;
 
-                                // Crear un nuevo objeto Producto
-                                Producto producto = new Producto(id_producto, nombre_producto, descripcion, precio, imagenUrl);
-                                productList.add(producto);  // Añadir a la lista
+                                // Filtrar por categoría si corresponde
+                                if (categoriaId == 0 || id_categoria == categoriaId) {
+                                    Producto producto = new Producto(id_producto, nombre_producto, descripcion, precio, imagenUrl, id_categoria);
+                                    productList.add(producto);  // Añadir a la lista
+                                }
                             }
 
                             // Notificar al adaptador que los datos han cambiado

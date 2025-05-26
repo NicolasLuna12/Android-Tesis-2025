@@ -10,6 +10,7 @@ public class ProfileManager {
     private static final String KEY_SURNAME = "apellido";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_PHONE = "telefono";
+    private static final String KEY_PROFILE_IMAGE = "imagen_perfil_url";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
@@ -30,6 +31,28 @@ public class ProfileManager {
         Log.d("auth", "Apellido guardado despues del login:" + surname );
         Log.d("auth", "Email guardado despues del login:" + email );
         Log.d("auth", "Telefono guardado despues del login:" + phone );
+    }
+
+    // Guardar los datos del usuario incluyendo la imagen de perfil
+    public void saveInfo(String name, String surname, String email, String phone, String profileImageUrl) {
+        editor.putString(KEY_NAME, name);
+        editor.putString(KEY_SURNAME, surname);
+        editor.putString(KEY_EMAIL, email);
+        editor.putString(KEY_PHONE, phone);
+        editor.putString(KEY_PROFILE_IMAGE, profileImageUrl);
+        editor.apply();
+        Log.d("auth", "Nombre guardado despues del login:" + name );
+        Log.d("auth", "Apellido guardado despues del login:" + surname );
+        Log.d("auth", "Email guardado despues del login:" + email );
+        Log.d("auth", "Telefono guardado despues del login:" + phone );
+        Log.d("auth", "URL de imagen de perfil guardada:" + profileImageUrl);
+    }
+
+    // Guardar solo la URL de la imagen de perfil
+    public void saveProfileImageUrl(String profileImageUrl) {
+        editor.putString(KEY_PROFILE_IMAGE, profileImageUrl);
+        editor.apply();
+        Log.d("auth", "URL de imagen de perfil actualizada:" + profileImageUrl);
     }
 
     // Leer los datos del usuario
@@ -53,9 +76,14 @@ public class ProfileManager {
         return sharedPreferences.getString(KEY_PHONE, null);
     }
 
+    public String getProfileImageUrl() {
+        return sharedPreferences.getString(KEY_PROFILE_IMAGE, null);
+    }
+
     // Borrar la session
     public void clearInfo() {
         editor.clear();
         editor.apply();
     }
 }
+

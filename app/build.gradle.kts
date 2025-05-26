@@ -50,9 +50,10 @@ dependencies {
 
 
     //para imagenes
-
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
+    // Agregar CircleImageView para imágenes de perfil circulares
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
@@ -63,3 +64,4 @@ dependencies {
     implementation(libs.volley)
 
 }
+

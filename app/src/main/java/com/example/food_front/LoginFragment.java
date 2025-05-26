@@ -2,6 +2,7 @@ package com.example.food_front;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
 import com.example.food_front.utils.ProfileManager;
 import com.example.food_front.utils.SessionManager;
 
@@ -106,12 +108,16 @@ public class LoginFragment extends Fragment {
                             String surname = response.getString("apellido");
                             String email = response.getString("email");
                             String phone = response.getString("telefono");
+                            String profileImageUrl = response.optString("imagen_perfil_url", "");
+
+                            // Agregar log para ver la URL que viene del backend
+                            Log.d("ImagenPerfil", "URL recibida del backend: " + profileImageUrl);
 
                             sessionManager.saveToken(token);  // Guardar el token para futuras solicitudes
-                            profileManager.saveInfo(name, surname, email, phone);  // Save info for future use
-                            saveUserProfile(name, surname, email, phone); // Llamada a la nueva función
-                            Toast.makeText(getContext(), "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show();
+                            profileManager.saveInfo(name, surname, email, phone, profileImageUrl);  // Guardar info incluyendo imagen
 
+                            // Solo guardar la URL y reemplazar el fragmento
+                            Toast.makeText(getContext(), "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show();
                             replaceFragment(new HomeFragment());
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -145,8 +151,8 @@ public class LoginFragment extends Fragment {
         return email.matches(emailPattern);
     }
 
-    public void saveUserProfile(String name, String surname, String email, String phone) {
-        profileManager.saveInfo(name, surname, email, phone); // Guardar los datos del usuario
+    public void saveUserProfile(String name, String surname, String email, String phone, String profileImageUrl) {
+        profileManager.saveInfo(name, surname, email, phone, profileImageUrl); // Guardar los datos del usuario
         Toast.makeText(getContext(), "Datos guardados correctamente", Toast.LENGTH_SHORT).show();
     }
 
@@ -158,3 +164,4 @@ public class LoginFragment extends Fragment {
         fragmentTransaction.commit();
     }
 }
+
