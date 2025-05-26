@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/image_producto"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="product_image" />
+
+    <TextView
+        android:id="@+id/text_nombre_producto"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Nombre del producto"
+        android:layout_marginStart="5dp"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/image_producto"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/text_precio_producto" />
+
+    <TextView
+        android:id="@+id/text_precio_producto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="$0.00"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_eliminar_producto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_eliminar"
+        app:layout_constraintTop_toBottomOf="@id/text_precio_producto"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="Eliminar producto" />
+
+    <!-- Minus Button -->
+    <Button
+        android:id="@+id/button_minus"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:backgroundTint="#ffbe00"
+        android:text="-"
+        android:textAllCaps="false"
+        android:textColor="#1a1a1a"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/image_producto"
+        app:layout_constraintTop_toBottomOf="@id/text_nombre_producto"
+        android:layout_marginStart="10dp"/>
+
+    <!-- Quantity Text -->
+    <TextView
+        android:id="@+id/text_cantidad"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1"
+        android:textSize="20sp"
+        app:layout_constraintStart_toEndOf="@id/button_minus"
+        app:layout_constraintTop_toTopOf="@id/button_minus"
+        app:layout_constraintBottom_toBottomOf="@+id/button_minus"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp" />
+
+    <!-- Plus Button -->
+    <Button
+        android:id="@+id/button_plus"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:backgroundTint="#ffbe00"
+        android:text="+"
+        android:textAllCaps="false"
+        android:textColor="#1a1a1a"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/text_cantidad"
+        app:layout_constraintTop_toBottomOf="@id/text_nombre_producto"
+        android:layout_marginStart="20dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
