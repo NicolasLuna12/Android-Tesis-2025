@@ -15,6 +15,16 @@
         android:orientation="horizontal"
         android:padding="8dp">
 
+        <!-- Imagen de perfil -->
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/profile_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/default_profile"
+            app:civ_border_width="2dp"
+            app:civ_border_color="#FFFFFF"/>
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
