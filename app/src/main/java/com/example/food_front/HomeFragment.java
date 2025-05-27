@@ -28,9 +28,7 @@ import com.example.food_front.utils.SessionManager;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class HomeFragment extends Fragment {
-
-    private TextView tvName;
+public class HomeFragment extends Fragment {    private TextView tvName;
     private Button button1, button2, button3, button4;
     private ImageView imageView1, imageView2, imageView3, imageView4;
     private CircleImageView profileImage;
@@ -81,20 +79,67 @@ public class HomeFragment extends Fragment {
         } else {
             tvName.setText("Usuario");
         }
+    }    private void cargarImagenPerfil() {
+        String baseUrl = profileManager.getProfileImageUrl(); // Obtener URL base sin timestamp
+        String imageUrl = profileManager.getProfileImageUrlWithTimestamp(); // URL con timestamp para Glide
+        
+        Log.d("ImagenPerfil", "URL base recuperada: " + baseUrl);
+        Log.d("ImagenPerfil", "URL con timestamp: " + imageUrl);
+
+        if (baseUrl != null && !baseUrl.isEmpty()) {
+            // Limpiar toda caché anterior
+            com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
+            
+            // Descargar la imagen directamente sin usar Glide
+            new Thread(() -> {
+                try {
+                    // Descargar la imagen directamente
+                    java.net.URL url = new java.net.URL(baseUrl);
+                    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+                    connection.setDoInput(true);
+                    connection.setUseCaches(false); // Evitar caché
+                    connection.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate");
+                    connection.setRequestProperty("Pragma", "no-cache");
+                    connection.connect();
+                    
+                    final android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(connection.getInputStream());
+                    
+                    // Actualizar UI en hilo principal
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            if (bitmap != null) {
+                                profileImage.setImageBitmap(bitmap);
+                                Log.d("ImagenPerfil", "Imagen cargada exitosamente con descarga directa");
+                            } else {
+                                // Si falla, intentar con Glide como respaldo
+                                cargarImagenConGlide(imageUrl);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e("ImagenPerfil", "Error al descargar directamente: " + e.getMessage());
+                    // En caso de error, intentar con Glide
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> cargarImagenConGlide(imageUrl));
+                    }
+                }
+            }).start();
+        } else {
+            Log.d("ImagenPerfil", "No hay URL de imagen, usando imagen predeterminada");
+            // Usar imagen predeterminada
+            profileImage.setImageResource(R.drawable.default_profile);
+        }
     }
-
-    private void cargarImagenPerfil() {
-        String imageUrl = profileManager.getProfileImageUrl();
-        Log.d("ImagenPerfil", "URL recuperada para cargar: " + imageUrl);
-
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            // Asegurarse de que Glide no use cache para evitar problemas con imágenes antiguas
-            Glide.with(requireContext())
-                .load(imageUrl)
-                .skipMemoryCache(true)
-                .placeholder(R.drawable.default_profile)
-                .error(R.drawable.default_profile)
-                .listener(new RequestListener<Drawable>() {
+    
+    private void cargarImagenConGlide(String imageUrl) {
+        // Usar Glide como método alternativo
+        Glide.with(requireContext())
+            .load(imageUrl)
+            .skipMemoryCache(true)
+            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+            .placeholder(R.drawable.default_profile)
+            .error(R.drawable.default_profile)
+            .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
                         Log.e("ImagenPerfil", "Error al cargar la imagen: " + e);
@@ -103,15 +148,62 @@ public class HomeFragment extends Fragment {
 
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        Log.d("ImagenPerfil", "Imagen cargada exitosamente");
+                        Log.d("ImagenPerfil", "Imagen cargada exitosamente desde: " + model);
                         return false;
                     }
-                })
-                .into(profileImage);
-        } else {
-            Log.d("ImagenPerfil", "No hay URL de imagen, usando imagen predeterminada");
-            // Usar imagen predeterminada
-            profileImage.setImageResource(R.drawable.default_profile);
+                })                .into(profileImage);
+    }
+      // Método para actualizar la imagen de perfil desde otro fragmento
+    public void actualizarImagenPerfil(String url) {
+        if (profileImage != null && url != null && !url.isEmpty()) {
+            // Limpiar la caché primero
+            com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
+            
+            String imageUrlWithTimestamp = url + "?nocache=" + Math.random() + "&t=" + System.currentTimeMillis();
+            Log.d("ImagenPerfil", "Actualizando imagen desde otro fragmento: " + imageUrlWithTimestamp);
+            
+            // Forzar la descarga directa de la imagen sin usar Glide
+            new Thread(() -> {
+                try {
+                    // Descargar la imagen directamente
+                    java.net.URL url1 = new java.net.URL(url);
+                    final android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(url1.openConnection().getInputStream());
+                    
+                    // Actualizar UI en el hilo principal
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            if (bitmap != null) {
+                                // Actualizar la ImageView con el bitmap descargado
+                                profileImage.setImageBitmap(bitmap);
+                                Log.d("ImagenPerfil", "Imagen en HomeFragment actualizada directamente con Bitmap");
+                            } else {
+                                // Si falla, intentar con Glide como respaldo
+                                Glide.with(requireContext())
+                                    .load(imageUrlWithTimestamp)
+                                    .skipMemoryCache(true)
+                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+                                    .placeholder(R.drawable.default_profile)
+                                    .error(R.drawable.default_profile)
+                                    .into(profileImage);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e("ImagenPerfil", "Error al descargar directamente en HomeFragment: " + e.getMessage());
+                    // Si falla, intentar con Glide como respaldo en el hilo principal
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            Glide.with(requireContext())
+                                .load(imageUrlWithTimestamp)
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+                                .placeholder(R.drawable.default_profile)
+                                .error(R.drawable.default_profile)
+                                .into(profileImage);
+                        });
+                    }
+                }
+            }).start();
         }
     }
 
@@ -133,5 +225,34 @@ public class HomeFragment extends Fragment {
 
     public CircleImageView getProfileImageView() {
         return profileImage;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Recargar imagen de perfil del servidor
+        reloadProfileDataIfNeeded();
+    }
+
+    private void reloadProfileDataIfNeeded() {
+        // Verificar si han pasado más de 5 minutos desde la última carga
+        long lastUpdated = profileManager.getLastImageUpdate();
+        long now = System.currentTimeMillis();
+        
+        if (now - lastUpdated > 5 * 60 * 1000) { // 5 minutos
+            Log.d("ImagenPerfil", "Han pasado más de 5 minutos, recargando datos del perfil");
+            cargarImagenPerfil(); // Esto ya usa la URL con timestamp para forzar recarga
+        }
+    }    // Quitamos el BroadcastReceiver para simplificar y evitar errores
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Ya no usamos BroadcastReceiver
+    }
+    
+    @Override
+    public void onStop() {
+        super.onStop();
+        // Ya no necesitamos desregistrar nada
     }
 }

@@ -2,6 +2,7 @@ package com.example.food_front;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import com.example.food_front.databinding.ActivityMainBinding;
+import com.example.food_front.utils.ProfileManager;
 import com.example.food_front.utils.SessionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -17,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private SessionManager sessionManager;
+    private ProfileManager profileManager;
 
 
     @Override
@@ -24,10 +27,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
-        // Initialize SessionManager
+        setContentView(binding.getRoot());        // Initialize SessionManager and ProfileManager
         sessionManager = new SessionManager(this);
+        profileManager = new ProfileManager(this);
 
         // Cargar el LoginFragment al inicio
 
@@ -80,13 +82,11 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.replace(R.id.fragment_container_view, new LoginFragment());
         fragmentTransaction.commit();
     }
-
-
     public void mostrarHome() {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment());
+        fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment(), "HomeFragment");
         fragmentTransaction.commit();
     }
 
@@ -120,5 +120,70 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.replace(R.id.fragment_container_view, new ContactFragment());
         fragmentTransaction.commit();
+    }
+
+    // Método para actualizar la imagen de perfil en todos los fragmentos
+    public void actualizarImagenPerfil(String imageUrl) {
+        try {
+            // Limpiar caché primero
+            com.example.food_front.utils.ImageCacheManager.clearGlideCache(this);
+            
+            // Guarda la nueva URL en el ProfileManager
+            ProfileManager profileManager = new ProfileManager(this);
+            profileManager.saveProfileImageUrl(imageUrl);
+            
+            Log.d("MainActivity", "Actualizando imagen de perfil en todos los fragmentos: " + imageUrl);
+            
+            // Actualizar todos los fragmentos directamente en el hilo UI
+            actualizarFragmentosDirectamente(imageUrl);
+            
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error al actualizar imagen de perfil: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Método simplificado y seguro para actualizar los fragmentos directamente en el hilo UI
+     */
+    private void actualizarFragmentosDirectamente(String imageUrl) {
+        try {
+            runOnUiThread(() -> {
+                try {
+                    // Actualizar HomeFragment si está visible
+                    HomeFragment homeFragment = (HomeFragment) getSupportFragmentManager()
+                            .findFragmentByTag("HomeFragment");
+                    if (homeFragment != null) {
+                        homeFragment.actualizarImagenPerfil(imageUrl);
+                    }
+                    
+                    // Intentar actualizar ProfileFragment si está visible
+                    for (androidx.fragment.app.Fragment fragment : getSupportFragmentManager().getFragments()) {
+                        if (fragment instanceof ProfileFragment && fragment.isVisible()) {
+                            ((ProfileFragment)fragment).actualizarImagenDePerfil(imageUrl);
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    Log.e("MainActivity", "Error al actualizar fragmentos directamente: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error en actualizarFragmentosDirectamente: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Método para forzar la recarga de todas las imágenes en la aplicación.
+     * Este método se puede llamar desde cualquier fragmento cuando se necesite
+     * actualizar las imágenes en toda la aplicación.
+     * Método simplificado para actualizar todas las imágenes sin usar hilos extras
+     */
+    public void actualizarTodasLasImagenes() {
+        try {
+            // Opción más segura: Simplemente llamar al método seguro que ya tenemos
+            actualizarFragmentosDirectamente(profileManager.getProfileImageUrl());
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error en actualizarTodasLasImagenes: " + e.getMessage());
+        }
     }
 }

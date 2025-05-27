@@ -46,14 +46,13 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     //recyclerview
-    implementation(libs.recyclerview)
-
-
-    //para imagenes
+    implementation(libs.recyclerview)    //para imagenes
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
     // Agregar CircleImageView para imágenes de perfil circulares
     implementation("de.hdodenhof:circleimageview:3.1.0")
+    
+    // No usaremos el SDK de Mercado Pago para evitar problemas de compatibilidad
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
@@ -63,5 +62,10 @@ dependencies {
     implementation(libs.fragment)
     implementation(libs.volley)
 
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
