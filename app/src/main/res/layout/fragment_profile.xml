@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/orange"
+    android:background="@color/bg_dark"
     android:padding="16dp">
 
     <!-- Encabezado con imagen y detalles del usuario -->
@@ -23,7 +23,7 @@
             android:layout_marginEnd="16dp"
             android:src="@drawable/default_profile"
             app:civ_border_width="2dp"
-            app:civ_border_color="#FFFFFF"/>
+            app:civ_border_color="@color/bottom_nav_dark_selected"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-light"
                 android:text="Pablo Fernandez"
-                android:textColor="@color/black"
+                android:textColor="@color/white"
                 android:textSize="30sp" />
 
             <TextView
@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-light"
                 android:text="pablo_fernandez@gmail.com"
-                android:textColor="@color/black"
+                android:textColor="@color/white"
                 android:textSize="20sp" />
 
         </LinearLayout>
@@ -67,7 +67,7 @@
             android:drawablePadding="16dp"
             android:padding="12dp"
             android:text="Datos personales"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="20sp" />
 
         <TextView
@@ -79,7 +79,7 @@
             android:drawablePadding="16dp"
             android:padding="12dp"
             android:text="Direcciones"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="20sp" />
 
         <TextView
@@ -91,7 +91,7 @@
             android:drawablePadding="16dp"
             android:padding="12dp"
             android:text="Mis pedidos"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="20sp" />
 
         <TextView
@@ -103,7 +103,7 @@
             android:drawablePadding="16dp"
             android:padding="12dp"
             android:text="Información legal"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="20sp" />
 
         <TextView
@@ -115,7 +115,7 @@
             android:drawablePadding="16dp"
             android:padding="12dp"
             android:text="Cerrar sesión"
-            android:textColor="@android:color/black"
+            android:textColor="@color/white"
             android:textSize="20sp" />
     </LinearLayout>
 
@@ -124,7 +124,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:backgroundTint="@color/black"
+        android:backgroundTint="@color/bottom_nav_dark_selected"
         android:text="Eliminar cuenta"
         android:textColor="@color/white"
         android:textSize="18sp" />

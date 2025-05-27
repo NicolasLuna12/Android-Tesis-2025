@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/main" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#FDE6A2" tools:context=".MainActivity">
-    <!-- Añadiendo layout horizontal para agrupar foto de perfil y texto de bienvenida -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools" android:id="@+id/main" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg_dark" tools:context=".MainActivity">
+    <!-- Layout horizontal para foto de perfil y bienvenida -->
     <LinearLayout
         android:id="@+id/layoutWelcome"
         android:layout_width="wrap_content"
@@ -11,25 +11,23 @@
         android:gravity="center_vertical"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/profileImage"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@drawable/default_profile"
             android:layout_marginEnd="8dp"/>
-
         <TextView
             android:id="@+id/txtUser"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/roboto_bold"
             android:text="Bienvenido Pablo"
-            android:textSize="22sp" />
+            android:textSize="22sp"
+            android:textColor="@color/white" />
     </LinearLayout>
-
     <ImageView android:id="@+id/imageView2" android:layout_width="409dp" android:layout_height="118dp" app:layout_constraintBottom_toTopOf="@+id/btnbuscar" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@+id/layoutWelcome" app:srcCompat="@mipmap/hambur"/>
-    <TextView android:id="@+id/textView2" android:layout_width="227dp" android:layout_height="wrap_content" android:fontFamily="@font/roboto_bold" android:foregroundTint="#020304" android:text="Tu comida a un click de distancia" android:textColor="#FFFFFF" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.497" app:layout_constraintStart_toStartOf="@+id/imageView2" app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.156"/>
+    <TextView android:id="@+id/textView2" android:layout_width="227dp" android:layout_height="wrap_content" android:fontFamily="@font/roboto_bold" android:foregroundTint="#020304" android:text="Tu comida a un click de distancia" android:textColor="@color/white" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.497" app:layout_constraintStart_toStartOf="@+id/imageView2" app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.156"/>
     <Button android:id="@+id/btnbuscar" android:layout_width="349dp" android:layout_height="61dp" android:backgroundTint="#FDE6A2" android:fontFamily="@font/roboto_bold" android:text="Buscar productos" android:textAlignment="textStart" android:textColor="#000000" android:textSize="18sp" app:icon="@android:drawable/ic_menu_search" app:iconSize="30dp" app:iconTint="#050505" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.47" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:layout_constraintVertical_bias="0.26999998" app:strokeColor="#101010" app:strokeWidth="1dp"/>
     <ScrollView android:id="@+id/scrollView6" android:layout_width="0dp" android:layout_height="55dp" android:layout_marginStart="1dp" android:layout_marginTop="16dp" android:layout_marginEnd="1dp" android:layout_marginBottom="1dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@+id/btnbuscar" app:layout_constraintVertical_bias="0.0">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">

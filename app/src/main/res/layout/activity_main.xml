@@ -12,24 +12,25 @@
         android:id="@+id/fragment_container_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="com.example.food_front.HomeFragment"/>
-
+        android:name="com.example.food_front.HomeFragment"
+        android:background="@color/bg_dark"/>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_gravity="bottom"
         android:layout_marginEnd="0dp"
-        android:background="@color/orange"
+        android:background="@drawable/bottom_nav_dark_bg"
         android:clipToPadding="false"
-        app:compatShadowEnabled="false"
-        app:elevation="@dimen/cardview_compat_inset_shadow"
+        app:compatShadowEnabled="true"
+        app:elevation="10dp"
         app:itemHorizontalTranslationEnabled="true"
         app:labelVisibilityMode="labeled"
+        app:itemIconTint="@color/bottom_nav_icon_dark_selector"
+        app:itemTextColor="@color/bottom_nav_icon_dark_selector"
         app:menu="@menu/bottom_menu" />
 
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
+
