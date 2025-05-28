@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#171B1B"
+    android:background="@color/bg_dark"
     android:textAlignment="center"
     tools:context=".MainActivity">
 
@@ -27,9 +27,9 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="96dp"
         android:layout_marginBottom="102dp"
-        android:backgroundTint="#2E84B3"
+        android:backgroundTint="#C77600"
         android:text="Volver al Menu Principal"
-        android:textColorLink="#00BCD4"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -42,11 +42,11 @@
         android:layout_marginTop="61dp"
         android:fontFamily="sans-serif"
         android:text="Registrado Correctamente"
-        android:textColor="#00BCD4"
-        android:textColorLink="#00BCD4"
+        android:textColor="@color/white"
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
