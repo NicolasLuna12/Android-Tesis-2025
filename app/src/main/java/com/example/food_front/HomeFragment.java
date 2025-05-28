@@ -28,9 +28,10 @@ import com.example.food_front.utils.SessionManager;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class HomeFragment extends Fragment {    private TextView tvName;
+public class HomeFragment extends Fragment {
+    private TextView tvName;
     private Button button1, button2, button3, button4;
-    private ImageView imageView1, imageView2, imageView3, imageView4;
+    private ImageView imageView1, imageView2;
     private CircleImageView profileImage;
     private ProfileManager profileManager;
     private SessionManager sessionManager;
@@ -49,8 +50,13 @@ public class HomeFragment extends Fragment {    private TextView tvName;
         button4 = view.findViewById(R.id.btn4);
         imageView1 = view.findViewById(R.id.imageView3);
         imageView2 = view.findViewById(R.id.imageView4);
-        imageView3 = view.findViewById(R.id.imageView5);
-        imageView4 = view.findViewById(R.id.imageView6);
+        TextView tvSlogan = view.findViewById(R.id.textView2);
+        tvSlogan.setOnClickListener(v -> {
+            String url = "https://ispcfood.netlify.app/";
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            i.setData(android.net.Uri.parse(url));
+            startActivity(i);
+        });
 
         profileManager = new ProfileManager(requireContext());
         sessionManager = new SessionManager(requireContext());
@@ -66,8 +72,6 @@ public class HomeFragment extends Fragment {    private TextView tvName;
         button4.setOnClickListener(v -> abrirProductosConFiltro(2)); // Lomitos id 2
         imageView1.setOnClickListener(v -> abrirProductosConFiltro(3)); // Hamburguesas id 3
         imageView2.setOnClickListener(v -> abrirProductosConFiltro(2)); // Lomitos id 2
-        imageView3.setOnClickListener(v -> replaceFragment(new ProductsFragment())); // Todos
-        imageView4.setOnClickListener(v -> abrirProductosConFiltro(1)); // Empanadas id 1
 
         return view;
     }
@@ -79,7 +83,8 @@ public class HomeFragment extends Fragment {    private TextView tvName;
         } else {
             tvName.setText("Usuario");
         }
-    }    private void cargarImagenPerfil() {
+    }
+    private void cargarImagenPerfil() {
         String baseUrl = profileManager.getProfileImageUrl(); // Obtener URL base sin timestamp
         String imageUrl = profileManager.getProfileImageUrlWithTimestamp(); // URL con timestamp para Glide
         
@@ -151,9 +156,11 @@ public class HomeFragment extends Fragment {    private TextView tvName;
                         Log.d("ImagenPerfil", "Imagen cargada exitosamente desde: " + model);
                         return false;
                     }
-                })                .into(profileImage);
+                })
+            .into(profileImage);
     }
-      // Método para actualizar la imagen de perfil desde otro fragmento
+
+    // Método para actualizar la imagen de perfil desde otro fragmento
     public void actualizarImagenPerfil(String url) {
         if (profileImage != null && url != null && !url.isEmpty()) {
             // Limpiar la caché primero
@@ -243,7 +250,8 @@ public class HomeFragment extends Fragment {    private TextView tvName;
             Log.d("ImagenPerfil", "Han pasado más de 5 minutos, recargando datos del perfil");
             cargarImagenPerfil(); // Esto ya usa la URL con timestamp para forzar recarga
         }
-    }    // Quitamos el BroadcastReceiver para simplificar y evitar errores
+    }
+    // Quitamos el BroadcastReceiver para simplificar y evitar errores
     @Override
     public void onStart() {
         super.onStart();
