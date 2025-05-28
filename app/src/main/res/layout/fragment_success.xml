@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#171B1B"
+    android:background="@color/bg_dark"
     tools:context=".MainActivity">
 
     <TextView
@@ -13,9 +13,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="46dp"
-        android:fontFamily="sans-serif"
+        android:fontFamily="@font/roboto_bold"
         android:text="Compra Finalizada con Exito"
-        android:textColor="#00BCD4"
+        android:textColor="@color/white"
         android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@+id/button"
         app:layout_constraintEnd_toEndOf="parent"
@@ -27,12 +27,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="116dp"
-        android:backgroundTint="#2E84B3"
-        android:backgroundTintMode="add"
-        android:fontFamily="sans-serif"
+        android:backgroundTint="#C77600"
+        android:fontFamily="@font/roboto_bold"
         android:text="Volver al Menu Principal"
-        android:textColor="@color/black"
-        android:textColorLink="@color/black"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,3 +50,4 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/iconoexito" />
 </androidx.constraintlayout.widget.ConstraintLayout>
+

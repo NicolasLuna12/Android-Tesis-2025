@@ -61,7 +61,7 @@
 
         <!-- Aquí puedes agregar más campos de datos de entrega si es necesario -->
 
-    </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
         android:layout_width="match_parent"

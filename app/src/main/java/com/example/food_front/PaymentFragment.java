@@ -68,6 +68,19 @@ public class PaymentFragment extends Fragment {
         radioButtonCreditCard = view.findViewById(R.id.radioButton4);
         radioButtonPayPal = view.findViewById(R.id.radioButton6);
         buttonNext = view.findViewById(R.id.button2);
+
+        buttonNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Navegar al SuccessFragment
+                FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
+                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                fragmentTransaction.replace(R.id.main, new SuccessFragment());
+                fragmentTransaction.addToBackStack(null);
+                fragmentTransaction.commit();
+            }
+        });
+
         return view;
     }
 }
