@@ -43,7 +43,7 @@
                 android:id="@+id/radioButton4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#FFC107"
+                android:background="#C77600"
                 android:backgroundTintMode="add"
                 android:text="@string/tarjetas_de_credito1" />
 
@@ -59,7 +59,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="50dp"
-                android:background="#FFC107"
+                android:background="#C77600"
                 android:text="@string/mercado_pago1" />
 
             <ImageView
@@ -73,7 +73,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="50dp"
-                android:background="#FFC107"
+                android:background="#C77600"
                 android:text="@string/paypal1" />
 
             <ImageView
@@ -91,7 +91,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:backgroundTint="#FFC107"
+        android:backgroundTint="#C77600"
         android:text="@string/siguiente1"
         android:textColor="#0F0E0E"
         app:layout_constraintEnd_toEndOf="parent"
@@ -100,3 +100,4 @@
         app:layout_constraintTop_toBottomOf="@+id/container" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

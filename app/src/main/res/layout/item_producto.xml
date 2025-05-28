@@ -36,6 +36,7 @@
         android:id="@+id/button_add_to_cart"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Agregar al Carrito"/>
+        android:text="Agregar al Carrito"
+        android:backgroundTint="#C77600"/>
 
 </LinearLayout>

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="#fefdf9">
+    android:background="@color/bg_dark">
 
 
     <androidx.appcompat.widget.Toolbar
@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp"
             android:text="@string/datos_entrega"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="26sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -44,100 +44,24 @@
         android:id="@+id/item1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fefdf9"
+        android:background="@color/bg_dark"
         app:layout_constraintTop_toBottomOf="@+id/toolbar"
         android:padding="16dp"
         android:layout_marginTop="30dp"
-
         >
-
-        <TextView
-            android:id="@+id/textViewNombre"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Dirección de entrega"
-            android:textColor="#1a1a1a"
-            android:textSize="16dp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginTop="6dp"
-            />
 
         <TextView
             android:id="@+id/textViewPrecio"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Siempre viva 123"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/textViewNombre"
-            android:layout_marginTop="26dp"
-            />
+            android:layout_marginBottom="8dp"/>
 
+        <!-- Aquí puedes agregar más campos de datos de entrega si es necesario -->
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="#fefdf9"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/textViewNombre"
-            app:layout_constraintEnd_toEndOf="parent"
-
-            >
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:background="@drawable/big_border"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:paddingHorizontal="16dp"
-                >
-
-
-                <ImageView
-                    android:id="@+id/tvAdd1"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:src="@drawable/pencil"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"/>
-
-
-
-
-
-
-
-
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
-
-
-
-
-
-
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
-
-
-
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
     <View
         android:layout_width="match_parent"
@@ -150,7 +74,7 @@
         android:id="@+id/item2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fefdf9"
+        android:background="@color/bg_dark"
         app:layout_constraintTop_toBottomOf="@+id/item1"
         android:padding="16dp"
         android:layout_marginTop="2dp"
@@ -161,7 +85,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Método de entrega"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16dp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -174,7 +98,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="30 - 35 min"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -186,7 +110,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="#fefdf9"
+            android:background="@color/bg_dark"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvTitle2"
@@ -227,7 +151,7 @@
         android:id="@+id/item3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fefdf9"
+        android:background="@color/bg_dark"
         app:layout_constraintTop_toBottomOf="@+id/item2"
         android:padding="16dp"
         android:layout_marginTop="2dp"
@@ -238,7 +162,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Costos de envio"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16dp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -251,7 +175,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="$280"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -263,7 +187,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="#fefdf9"
+            android:background="@color/bg_dark"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvTitle3"
@@ -291,13 +215,6 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-
-
-
-
-
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
@@ -310,7 +227,7 @@
         android:id="@+id/item4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#fefdf9"
+        android:background="@color/bg_dark"
         app:layout_constraintTop_toBottomOf="@+id/item3"
         android:padding="16dp"
         android:layout_marginTop="2dp"
@@ -321,7 +238,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Método de pago"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16dp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -334,7 +251,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Efectivo"
-            android:textColor="#1a1a1a"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -346,7 +263,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="#fefdf9"
+            android:background="@color/bg_dark"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvTitle4"
@@ -373,13 +290,6 @@
                     app:layout_constraintEnd_toEndOf="parent"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
-
-
-
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -411,7 +321,17 @@
         android:layout_marginStart="16dp"
         />
 
-
+    <TextView
+        android:id="@+id/textViewNombre"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dirección de entrega"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:layout_editor_absoluteX="14dp"
+        tools:layout_editor_absoluteY="109dp" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
