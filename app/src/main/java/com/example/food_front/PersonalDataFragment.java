@@ -1,6 +1,7 @@
 package com.example.food_front;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -96,74 +97,35 @@ public class PersonalDataFragment extends Fragment {
     }
 
     /**
-     * Obtiene los datos frescos del usuario directamente desde el backend
+     * Obtiene los datos del usuario directamente desde el almacenamiento local
+     * en lugar de hacer una solicitud adicional al backend
      */
     private void fetchUserDataFromBackend() {
-        // URL para obtener los datos del usuario
-        String url = "https://backmobile1.onrender.com/appUSERS/perfil/";
+        // En lugar de solicitar al backend, usamos los datos que ya guardamos durante el login
+        Log.d(TAG, "Utilizando datos guardados localmente desde el login");
 
-        // Mostrar un diálogo de progreso
+        // Mostrar un diálogo de progreso breve para mantener la experiencia de usuario
         ProgressDialog progressDialog = new ProgressDialog(requireContext());
         progressDialog.setMessage("Cargando datos...");
         progressDialog.show();
 
-        // Crear la solicitud
-        JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.GET,
-                url,
-                null,
-                response -> {
-                    progressDialog.dismiss();
-                    Log.d(TAG, "Respuesta del backend: " + response.toString());
+        try {
+            // Simular un breve retraso para mejor experiencia de usuario
+            new android.os.Handler().postDelayed(() -> {
+                progressDialog.dismiss();
 
-                    try {
-                        // Extraer datos del usuario
-                        String nombre = response.optString("nombre", "No disponible");
-                        String apellido = response.optString("apellido", "No disponible");
-                        String email = response.optString("email", "No disponible");
-                        String telefono = response.optString("telefono", "No disponible");
-                        String direccion = response.optString("direccion", "No disponible");
+                // Simplemente mostrar los datos que ya tenemos guardados
+                displayPersonalData();
 
-                        // Mostrar los datos obtenidos en el log
-                        Log.d(TAG, "Datos recibidos del backend:");
-                        Log.d(TAG, "Nombre: " + nombre);
-                        Log.d(TAG, "Apellido: " + apellido);
-                        Log.d(TAG, "Email: " + email);
-                        Log.d(TAG, "Teléfono: " + telefono);
-                        Log.d(TAG, "Dirección: " + direccion);
+                Toast.makeText(requireContext(), "Datos cargados correctamente", Toast.LENGTH_SHORT).show();
+            }, 300); // Retraso de 300ms para que el diálogo sea visible
 
-                        // Guardar en el ProfileManager
-                        profileManager.saveInfo(nombre, apellido, email, telefono, profileManager.getProfileImageUrl(), direccion);
-
-                        // Mostrar en la UI
-                        displayPersonalData();
-
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error al procesar respuesta del backend", e);
-                        Toast.makeText(requireContext(), "Error al procesar los datos del usuario", Toast.LENGTH_SHORT).show();
-                        displayPersonalData(); // Mostrar datos almacenados localmente como respaldo
-                    }
-                },
-                error -> {
-                    progressDialog.dismiss();
-                    Log.e(TAG, "Error al obtener datos del usuario", error);
-                    Toast.makeText(requireContext(), "Error al obtener datos del usuario", Toast.LENGTH_SHORT).show();
-                    displayPersonalData(); // Mostrar datos almacenados localmente como respaldo
-                }
-        ) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<>();
-                String token = sessionManager.getToken();
-                if (token != null) {
-                    headers.put("Authorization", "Bearer " + token);
-                }
-                return headers;
-            }
-        };
-
-        // Agregar la solicitud a la cola
-        requestQueue.add(request);
+        } catch (Exception e) {
+            progressDialog.dismiss();
+            Log.e(TAG, "Error al cargar datos locales: " + e.getMessage());
+            Toast.makeText(requireContext(), "Error al cargar los datos del usuario", Toast.LENGTH_SHORT).show();
+            displayPersonalData(); // Mostrar datos almacenados localmente como respaldo
+        }
     }
 
     private void displayPersonalData() {

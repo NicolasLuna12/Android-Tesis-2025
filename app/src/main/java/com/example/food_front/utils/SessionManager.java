@@ -34,5 +34,9 @@ public class SessionManager {
         editor.apply();
     }
 
-
+    // Método logout como alias de clearSession para mayor legibilidad
+    public void logout() {
+        clearSession();
+        Log.d("auth", "Sesión cerrada correctamente");
+    }
 }

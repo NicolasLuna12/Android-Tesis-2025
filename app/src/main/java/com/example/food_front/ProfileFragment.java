@@ -93,6 +93,29 @@ public class ProfileFragment extends Fragment {
         // Encontrar el TextView de "Cerrar sesion"
         TextView closeSession = view.findViewById(R.id.logout);
 
+        // Añadir el listener de clic para "Cerrar sesion"
+        closeSession.setOnClickListener(v -> {
+            // Mostrar un diálogo de confirmación antes de cerrar la sesión
+            new AlertDialog.Builder(requireContext())
+                .setTitle("Cerrar sesión")
+                .setMessage("¿Estás seguro de que deseas cerrar tu sesión?")
+                .setPositiveButton("Sí", (dialog, which) -> {
+                    // Cerrar la sesión
+                    sessionManager.logout();
+
+                    // Mostrar mensaje
+                    Toast.makeText(requireContext(), "Sesión cerrada exitosamente", Toast.LENGTH_SHORT).show();
+
+                    // Redirigir a la pantalla principal donde se mostrará el LoginFragment
+                    Intent intent = new Intent(requireActivity(), MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    requireActivity().finish();
+                })
+                .setNegativeButton("No", null)
+                .show();
+        });
+
         // Encontrar el TextView de "Mis pedidos"
         TextView viewOrders = view.findViewById(R.id.view_orders);
         viewOrders.setOnClickListener(v -> {
@@ -109,7 +132,15 @@ public class ProfileFragment extends Fragment {
                             } else {
                                 for (int i = 0; i < pedidos.length(); i++) {
                                     org.json.JSONObject pedido = pedidos.getJSONObject(i);
-                                    pedidosStr.append("\uD83D\uDCC5 Pedido #").append(i + 1).append("\n");
+
+                                    // Usar id_pedidos si está disponible, o el índice + 1 como respaldo
+                                    int numeroPedido = pedido.has("id_pedidos") ?
+                                            pedido.getInt("id_pedidos") :
+                                            (i + 1);
+
+                                    pedidosStr.append("\uD83D\uDCC5 Pedido #").append(numeroPedido).append("\n");
+
+                                    // El resto del código sigue igual para mostrar los detalles
                                     if (pedido.has("fecha_pedido")) pedidosStr.append("  Fecha: ").append(pedido.getString("fecha_pedido")).append("\n");
                                     if (pedido.has("direccion_entrega")) pedidosStr.append("  Entrega: ").append(pedido.getString("direccion_entrega")).append("\n");
                                     if (pedido.has("estado")) pedidosStr.append("  Estado: ").append(pedido.getString("estado")).append("\n");
