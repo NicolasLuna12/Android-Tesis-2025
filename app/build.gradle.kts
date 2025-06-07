@@ -62,10 +62,12 @@ dependencies {
     implementation(libs.fragment)
     implementation(libs.volley)
 
+    // Cloudinary para subida de imágenes
+    implementation("com.cloudinary:cloudinary-android:2.3.1")
+
 }
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
-

@@ -1,6 +1,7 @@
 package com.example.food_front;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -258,14 +259,21 @@ public class ProfileFragment extends Fragment {
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             Uri imageUri = data.getData();
             try {
-                InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+                // Comprimimos la imagen antes de subirla
+                android.graphics.Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
+
+                // Redimensionamos la imagen para reducir su tamaño
+                android.graphics.Bitmap resizedBitmap = resizeImage(bitmap, 800); // máximo 800px en su dimensión más grande
+
+                // Convertimos el bitmap a bytes con compresión
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                }
+                resizedBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream); // calidad 70%
                 byte[] imageBytes = byteArrayOutputStream.toByteArray();
+
+                // Mostramos el tamaño de la imagen comprimida para diagnóstico
+                Log.d("ImagenPerfil", "Tamaño de la imagen comprimida: " + (imageBytes.length / 1024) + " KB");
+
+                // Intentamos subir la imagen al servidor
                 uploadImage(imageBytes);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -277,107 +285,304 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void uploadImage(byte[] imageBytes) {
-        String url = "https://backmobile1.onrender.com/appUSERS/upload_profile_image/";
+    /**
+     * Redimensiona una imagen manteniendo su relación de aspecto
+     * @param image La imagen original
+     * @param maxSize El tamaño máximo para el lado más largo
+     * @return La imagen redimensionada
+     */
+    private android.graphics.Bitmap resizeImage(android.graphics.Bitmap image, int maxSize) {
+        int width = image.getWidth();
+        int height = image.getHeight();
 
-        // Mostrar un mensaje mientras se sube la imagen
-        Toast.makeText(requireContext(), "Subiendo imagen...", Toast.LENGTH_SHORT).show();
+        float ratio = (float) width / (float) height;
+
+        int newWidth;
+        int newHeight;
+
+        if (width > height) {
+            newWidth = maxSize;
+            newHeight = Math.round(maxSize / ratio);
+        } else {
+            newHeight = maxSize;
+            newWidth = Math.round(maxSize * ratio);
+        }
+
+        return android.graphics.Bitmap.createScaledBitmap(image, newWidth, newHeight, true);
+    }
+
+    private void uploadImage(byte[] imageBytes) {
+        // Mostrar un diálogo de progreso
+        ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Preparando imagen...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        // Si la imagen es mayor a 1MB, mostrar una advertencia
+        if (imageBytes.length > 1024 * 1024) {
+            progressDialog.dismiss();
+            new AlertDialog.Builder(requireContext())
+                .setTitle("Imagen demasiado grande")
+                .setMessage("La imagen seleccionada es de " + (imageBytes.length / 1024 / 1024) + "MB. Es posible que la subida sea lenta. ¿Deseas intentar subir la imagen de todos modos?")
+                .setPositiveButton("Sí, intentar", (dialog, which) -> {
+                    // Reiniciar el proceso con la imagen original
+                    uploadToCloudinary(imageBytes, progressDialog);
+                })
+                .setNegativeButton("No, cancelar", (dialog, which) -> {
+                    Toast.makeText(requireContext(), "Subida cancelada", Toast.LENGTH_SHORT).show();
+                })
+                .show();
+        } else {
+            // Si la imagen es pequeña, continuar directamente
+            uploadToCloudinary(imageBytes, progressDialog);
+        }
+    }
+
+    /**
+     * Sube una imagen a Cloudinary
+     * @param imageBytes Bytes de la imagen a subir
+     * @param progressDialog Diálogo de progreso existente o null para crear uno nuevo
+     */
+    private void uploadToCloudinary(byte[] imageBytes, ProgressDialog progressDialog) {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(requireContext());
+            progressDialog.setMessage("Subiendo imagen...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        } else {
+            progressDialog.setMessage("Subiendo imagen a Cloudinary...");
+        }
+
+        final ProgressDialog finalProgressDialog = progressDialog;
+
+        // Subir imagen usando el CloudinaryManager
+        com.example.food_front.utils.CloudinaryManager.uploadImage(
+            requireContext(),
+            imageBytes,
+            "profile_images",
+            new com.example.food_front.utils.CloudinaryManager.CloudinaryUploadCallback() {
+                @Override
+                public void onStart() {
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            finalProgressDialog.setMessage("Iniciando subida...");
+                        });
+                    }
+                }
+
+                @Override
+                public void onProgress(double progress) {
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            int progressInt = (int) (progress * 100);
+                            finalProgressDialog.setMessage("Subiendo imagen: " + progressInt + "%");
+                        });
+                    }
+                }
+
+                @Override
+                public void onSuccess(String imageUrl) {
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            finalProgressDialog.dismiss();
+
+                            // Guardar URL de imagen en SharedPreferences
+                            profileManager.saveProfileImageUrl(imageUrl);
+
+                            // Actualizar la imagen local
+                            cargarImagenConGlide(imageUrl);
+
+                            // Actualizar imagen en otros fragmentos
+                            MainActivity mainActivity = (MainActivity) getActivity();
+                            if (mainActivity != null) {
+                                mainActivity.actualizarTodasLasImagenes();
+                            }
+
+                            Toast.makeText(requireContext(), "Imagen subida correctamente", Toast.LENGTH_SHORT).show();
+
+                            // También actualizar en el backend si es necesario
+                            actualizarImagenEnBackend(imageUrl);
+                        });
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> {
+                            finalProgressDialog.dismiss();
+                            Toast.makeText(requireContext(), "Error: " + errorMessage, Toast.LENGTH_LONG).show();
+
+                            // Si hay un error con Cloudinary, mostrar un diálogo para usar el método anterior
+                            new AlertDialog.Builder(requireContext())
+                                .setTitle("Error con Cloudinary")
+                                .setMessage("¿Deseas intentar subir la imagen usando el método alternativo?")
+                                .setPositiveButton("Sí, intentar", (dialog, which) -> {
+                                    // Usar el método original (backend propio)
+                                    continueUpload(imageBytes, "https://backmobile1.onrender.com/appUSERS/upload_profile_image/");
+                                })
+                                .setNegativeButton("Cancelar", null)
+                                .show();
+                        });
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Actualiza la URL de la imagen del perfil en el backend
+     * @param imageUrl URL de Cloudinary
+     */
+    private void actualizarImagenEnBackend(String imageUrl) {
+        String url = "https://backmobile1.onrender.com/appUSERS/update_profile_image_url/";
+
+        try {
+            // Crear solicitud JSON
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("imagen_perfil_url", imageUrl);
+
+            // Crear solicitud Volley
+            JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                url,
+                jsonBody,
+                response -> {
+                    Log.d("ImagenPerfil", "URL actualizada en backend: " + response.toString());
+                },
+                error -> {
+                    Log.e("ImagenPerfil", "Error al actualizar URL en backend", error);
+                }
+            ) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> headers = new HashMap<>();
+                    String token = sessionManager.getToken();
+                    if (token != null) {
+                        headers.put("Authorization", "Bearer " + token);
+                    }
+                    return headers;
+                }
+            };
+
+            // Añadir a la cola de Volley
+            RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
+            requestQueue.add(request);
+
+        } catch (Exception e) {
+            Log.e("ImagenPerfil", "Error al crear solicitud para actualizar URL", e);
+        }
+    }
+
+    /**
+     * Método público para actualizar la imagen de perfil desde MainActivity
+     * @param imageUrl URL de la nueva imagen
+     */
+    public void actualizarImagenDePerfil(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) return;
+
+        Log.d("ImagenPerfil", "actualizarImagenDePerfil llamado con URL: " + imageUrl);
+
+        // Limpiar caché
+        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
+
+        // Guardar la nueva URL
+        profileManager.saveProfileImageUrl(imageUrl);
+
+        // Actualizar la interfaz de usuario
+        if (profileImage != null) {
+            cargarImagenConGlide(imageUrl);
+        }
+    }
+
+    /**
+     * Continúa la subida de la imagen usando el método convencional (backend propio)
+     * @param imageBytes Bytes de la imagen
+     * @param url URL del endpoint para subir la imagen
+     */
+    private void continueUpload(byte[] imageBytes, String url) {
+        // Mostrar un diálogo de progreso
+        ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Subiendo imagen...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
 
         // Crear una solicitud multipart para subir la imagen
         VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest(Request.Method.POST, url,
                 response -> {
+                    progressDialog.dismiss();
+
                     // Procesar la respuesta del servidor
                     String responseBody = new String(response.data);
                     Log.d("ImagenPerfil", "Respuesta del servidor: " + responseBody);
 
                     try {
                         JSONObject jsonObject = new JSONObject(responseBody);
-                        String imageUrl = jsonObject.getString("imagen_perfil_url");
-                        // Limpiar completamente la caché de Glide
-                        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
-                        
-                        // Guardar la nueva URL de la imagen en SharedPreferences (una sola vez)
-                        profileManager.saveProfileImageUrl(imageUrl);
-                        
-                        // Agregar un pequeño retraso para asegurar que la caché se limpie
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+
+                        // Verificar si hay un mensaje de error en la respuesta
+                        if (jsonObject.has("error")) {
+                            String error = jsonObject.getString("error");
+                            Log.e("ImagenPerfil", "Error del servidor: " + error);
+                            Toast.makeText(requireContext(), "Error: " + error, Toast.LENGTH_LONG).show();
+                            return;
                         }
-                        
-                        // Actualizar la interfaz con la nueva imagen usando timestamp para forzar recarga
-                        String imageUrlWithTimestamp = imageUrl + "?refresh=" + Math.random() + "&t=" + System.currentTimeMillis();
-                        Log.d("ImagenPerfil", "Usando URL con parámetros aleatorios: " + imageUrlWithTimestamp);
 
-                        // Forzar la descarga directa de la imagen sin usar Glide (solución más drástica)
-                        new Thread(() -> {
-                            try {
-                                // Descargar la imagen directamente
-                                java.net.URL url1 = new java.net.URL(imageUrl);
-                                final android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeStream(url1.openConnection().getInputStream());
-                                
-                                // Actualizar UI en el hilo principal
-                                requireActivity().runOnUiThread(() -> {
-                                    if (bitmap != null) {
-                                        // Actualizar la ImageView con el bitmap descargado
-                                        profileImage.setImageBitmap(bitmap);
-                                        Log.d("ImagenPerfil", "Imagen actualizada directamente con Bitmap");
-                                    } else {
-                                        // Si falla, intentar con Glide como respaldo
-                                        Glide.with(requireContext())
-                                            .load(imageUrlWithTimestamp)
-                                            .skipMemoryCache(true)
-                                            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
-                                            .placeholder(R.drawable.default_profile)
-                                            .error(R.drawable.default_profile)
-                                            .into(profileImage);
-                                    }
-                                });
-                            } catch (Exception e) {
-                                Log.e("ImagenPerfil", "Error al descargar directamente: " + e.getMessage());
-                                // Si falla, intentar con Glide como respaldo en el hilo principal
-                                requireActivity().runOnUiThread(() -> {
-                                    Glide.with(requireContext())
-                                        .load(imageUrlWithTimestamp)
-                                        .skipMemoryCache(true)
-                                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
-                                        .placeholder(R.drawable.default_profile)
-                                        .error(R.drawable.default_profile)
-                                        .into(profileImage);
-                                });
-                            }
-                        }).start();
+                        // Obtener URL de la imagen (normalizando la obtención de la URL)
+                        String imageUrl = null;
+                        if (jsonObject.has("imagen_perfil_url")) {
+                            imageUrl = jsonObject.getString("imagen_perfil_url");
+                        } else if (jsonObject.has("image_url")) {
+                            imageUrl = jsonObject.getString("image_url");
+                        } else if (jsonObject.has("url")) {
+                            imageUrl = jsonObject.getString("url");
+                        }
 
-                        // Ya no usamos el BroadcastReceiver, solo actualizamos la UI directamente
-                        // y usamos el método simplificado de MainActivity
+                        if (imageUrl == null || imageUrl.isEmpty()) {
+                            Log.e("ImagenPerfil", "URL de imagen no encontrada en la respuesta: " + responseBody);
+                            Toast.makeText(requireContext(), "Error: No se recibió la URL de la imagen", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Guardar la URL final para usar en el código
+                        final String finalImageUrl = imageUrl;
+                        Log.d("ImagenPerfil", "URL de imagen recibida: " + finalImageUrl);
+
+                        // Limpiar caché de Glide
+                        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
+
+                        // Guardar la nueva URL en SharedPreferences
+                        profileManager.saveProfileImageUrl(finalImageUrl);
+
+                        // Actualizar la interfaz con la nueva imagen
+                        cargarImagenConGlide(finalImageUrl);
+
+                        // Actualizar en otros fragmentos
                         MainActivity mainActivity = (MainActivity) getActivity();
                         if (mainActivity != null) {
-                            mainActivity.actualizarImagenPerfil(imageUrl);
+                            mainActivity.actualizarTodasLasImagenes();
                         }
 
                         Toast.makeText(requireContext(), "Imagen de perfil actualizada", Toast.LENGTH_SHORT).show();
                     } catch (JSONException e) {
-                        e.printStackTrace();
+                        Log.e("ImagenPerfil", "Error al procesar la respuesta JSON: " + e.getMessage() + "\nRespuesta: " + responseBody);
                         Toast.makeText(requireContext(), "Error al procesar la respuesta del servidor", Toast.LENGTH_SHORT).show();
                     }
                 },
                 error -> {
-                    // Manejar el error
-                    Log.e("ImagenPerfil", "Error al subir la imagen: " + error.toString());
-                    Toast.makeText(requireContext(), "Error al subir la imagen", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    handleNetworkError(error);
                 }) {
+
             @Override
             protected Map<String, String> getParams() {
                 Map<String, String> params = new HashMap<>();
-                params.put("user_id", "1"); // Ajustar esto para usar el ID real del usuario
                 return params;
             }
 
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
                 Map<String, String> headers = new HashMap<>();
-                // Añadir el token de autenticación si es necesario
+                // Añadir el token de autenticación
                 String token = sessionManager.getToken();
                 if (token != null) {
                     headers.put("Authorization", "Bearer " + token);
@@ -386,117 +591,78 @@ public class ProfileFragment extends Fragment {
             }
         };
 
-        // Añadir la imagen como un archivo al cuerpo de la solicitud
+        // Añadir la imagen como archivo al cuerpo de la solicitud
         multipartRequest.addByteData("image", imageBytes, "profile_image.jpg", "image/jpeg");
+
+        // Establecer una política de reintento
+        multipartRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                90000, // 90 segundos de timeout
+                2,     // 2 reintentos
+                1.5f   // backoff multiplier
+        ));
 
         // Añadir la solicitud a la cola de Volley
         RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
         requestQueue.add(multipartRequest);
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Llamar al backend para obtener la última información del perfil
-        fetchProfileDataFromBackend();
-    }    
-    
     /**
-     * Carga los datos del perfil desde el backend y actualiza la UI
-     * Este método es público para permitir refrescar el perfil desde fuera del fragmento
+     * Maneja errores de red comunes
+     * @param error Error de Volley
      */
-    public void fetchProfileDataFromBackend() {
-        String url = "https://backmobile1.onrender.com/appUSERS/profile/";
-        
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
-            new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    try {
-                        String name = response.getString("nombre");
-                        String surname = response.getString("apellido");
-                        String email = response.getString("email");
-                        String phone = response.optString("telefono", "");
-                        String profileImageUrl = response.optString("imagen_perfil_url", "");
-                        
-                        Log.d("ImagenPerfil", "URL recibida del backend en fetchProfileData: " + profileImageUrl);
-                        
-                        // Limpiar la caché de Glide antes de actualizar
-                        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
-                        
-                        // Si la URL de la imagen cambió, también eliminar específicamente ese archivo
-                        String oldUrl = profileManager.getProfileImageUrl();
-                        if (oldUrl != null && !oldUrl.equals(profileImageUrl)) {
-                            com.example.food_front.utils.ImageCacheManager.removeFileFromCache(requireContext(), oldUrl);
-                        }
-                        
-                        // Actualizar los datos del perfil
-                        profileManager.saveInfo(name, surname, email, phone, profileImageUrl);
-                        
-                        // Refrescar la interfaz de usuario
-                        displayUserProfile();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Log.e("ProfileFragment", "Error al procesar la respuesta: " + e.getMessage());
-                    }
+    private void handleNetworkError(VolleyError error) {
+        String errorMsg = "Error al subir la imagen: ";
+
+        if (error.networkResponse != null) {
+            int statusCode = error.networkResponse.statusCode;
+            errorMsg += "Código: " + statusCode;
+
+            // Intentar obtener el cuerpo de la respuesta de error
+            try {
+                String responseBody = new String(error.networkResponse.data, "utf-8");
+                Log.e("ImagenPerfil", "Error response body: " + responseBody);
+
+                // Para errores 502, ofrecer alternativa
+                if (statusCode == 502) {
+                    showCloudflareErrorDialog();
+                    return;
                 }
-            },
-            new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("ProfileFragment", "Error al obtener datos del perfil: " + error.toString());
-                }
+
+                errorMsg += " - " + responseBody;
+            } catch (Exception e) {
+                Log.e("ImagenPerfil", "Error al leer el cuerpo de la respuesta de error", e);
             }
-        ) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> headers = new HashMap<>();
-                String token = sessionManager.getToken();
-                if (token != null) {
-                    headers.put("Authorization", "Bearer " + token);
-                }
-                return headers;
-            }
-        };
-        
-        // Aumentar el timeout para manejar servidor lento
-        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
-            30000, // 30 segundos de timeout
-            1, // Número de reintentos
-            1.0f // Sin backoff multiplier
-        ));
-        
-        RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
-        requestQueue.add(request);
+        } else if (error instanceof com.android.volley.TimeoutError) {
+            errorMsg = "El servidor tardó demasiado en responder. La imagen podría ser demasiado grande.";
+            showCloudflareErrorDialog();
+            return;
+        } else if (error instanceof com.android.volley.NoConnectionError) {
+            errorMsg = "No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente.";
+        } else {
+            errorMsg += error.toString();
+        }
+
+        Log.e("ImagenPerfil", errorMsg, error);
+        Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
     }
 
-    // Quitamos el BroadcastReceiver para simplificar y evitar errores
-    @Override
-    public void onStart() {
-        super.onStart();
-        // Ya no usamos BroadcastReceiver
-    }
-    
-    @Override
-    public void onStop() {
-        super.onStop();
-        // Ya no necesitamos desregistrar nada
-    }
-    
     /**
-     * Método público para actualizar la imagen de perfil desde fuera del fragmento
-     * @param imageUrl URL de la nueva imagen
+     * Muestra un diálogo específico para errores de Cloudflare (502 Bad Gateway)
      */
-    public void actualizarImagenDePerfil(String imageUrl) {
-        // Limpiar caché
-        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
-        
-        // Guardar la nueva URL
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            profileManager.saveProfileImageUrl(imageUrl);
-        }
-        
-        // Cargar la nueva imagen
-        fetchProfileDataFromBackend();
+    private void showCloudflareErrorDialog() {
+        if (getContext() == null) return;
+
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Problema con el servidor")
+            .setMessage("El servidor está experimentando problemas temporales (Error 502 Bad Gateway). Esto puede deberse a que:\n\n" +
+                      "1. El servidor está ocupado o en mantenimiento\n" +
+                      "2. La imagen es demasiado grande para ser procesada\n\n" +
+                      "¿Qué deseas hacer?")
+            .setPositiveButton("Intentar con otra imagen", (dialog, which) -> {
+                // Volver a abrir el selector de imágenes
+                selectImage();
+            })
+            .setNegativeButton("Cancelar", null)
+            .show();
     }
 }

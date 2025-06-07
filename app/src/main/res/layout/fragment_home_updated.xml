@@ -42,7 +42,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="76dp"
-        android:contentDescription="@string/ir_a_pagina_web"
+        android:contentDescription="Ir a la página web"
         app:backgroundTint="#2196F3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,5 +1,7 @@
 package com.example.food_front;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +24,7 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.load.DataSource;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import com.example.food_front.utils.ProfileManager;
 import com.example.food_front.utils.SessionManager;
@@ -30,11 +33,10 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class HomeFragment extends Fragment {
     private TextView tvName;
-    private Button button1, button2, button3, button4;
-    private ImageView imageView1, imageView2;
     private CircleImageView profileImage;
     private ProfileManager profileManager;
-    private SessionManager sessionManager;
+
+    private static final String TAG = "HomeFragment";
 
     @Nullable
     @Override
@@ -44,22 +46,27 @@ public class HomeFragment extends Fragment {
         // Inicializar vistas
         tvName = view.findViewById(R.id.txtUser);
         profileImage = view.findViewById(R.id.profileImage);
-        button1 = view.findViewById(R.id.btn1);
-        button2 = view.findViewById(R.id.btn);
-        button3 = view.findViewById(R.id.btn3);
-        button4 = view.findViewById(R.id.btn4);
-        imageView1 = view.findViewById(R.id.imageView3);
-        imageView2 = view.findViewById(R.id.imageView4);
-        TextView tvSlogan = view.findViewById(R.id.textView2);
-        tvSlogan.setOnClickListener(v -> {
+        Button button1 = view.findViewById(R.id.btn1);
+        Button button2 = view.findViewById(R.id.btn);
+        Button button3 = view.findViewById(R.id.btn3);
+        Button button4 = view.findViewById(R.id.btn4);
+        ImageView imageView1 = view.findViewById(R.id.imageView3);
+        ImageView imageView2 = view.findViewById(R.id.imageView4);
+        FloatingActionButton btnWebsite = view.findViewById(R.id.btnWebsite);
+
+        // Configurar el onClick para el botón de navegación web
+        btnWebsite.setOnClickListener(v -> {
             String url = "https://ispcfood.netlify.app/";
-            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW);
-            i.setData(android.net.Uri.parse(url));
-            startActivity(i);
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            startActivity(intent);
         });
 
+        // Ya no necesitamos este clickListener en el texto
+        // TextView tvSlogan = view.findViewById(R.id.textView2);
+
         profileManager = new ProfileManager(requireContext());
-        sessionManager = new SessionManager(requireContext());
+        SessionManager sessionManager = new SessionManager(requireContext());
 
         // Mostrar el nombre del usuario e imagen de perfil
         mostrarNombreUsuario();
@@ -79,17 +86,18 @@ public class HomeFragment extends Fragment {
     private void mostrarNombreUsuario() {
         String nombreGuardado = profileManager.getName();
         if (nombreGuardado != null) {
-            tvName.setText("Bienvenido " + nombreGuardado);
+            tvName.setText(getString(R.string.bienvenido_usuario, nombreGuardado));
         } else {
-            tvName.setText("Usuario");
+            tvName.setText(R.string.usuario);
         }
     }
+
     private void cargarImagenPerfil() {
         String baseUrl = profileManager.getProfileImageUrl(); // Obtener URL base sin timestamp
         String imageUrl = profileManager.getProfileImageUrlWithTimestamp(); // URL con timestamp para Glide
         
-        Log.d("ImagenPerfil", "URL base recuperada: " + baseUrl);
-        Log.d("ImagenPerfil", "URL con timestamp: " + imageUrl);
+        Log.d(TAG, "URL base recuperada: " + baseUrl);
+        Log.d(TAG, "URL con timestamp: " + imageUrl);
 
         if (baseUrl != null && !baseUrl.isEmpty()) {
             // Limpiar toda caché anterior
@@ -114,7 +122,7 @@ public class HomeFragment extends Fragment {
                         getActivity().runOnUiThread(() -> {
                             if (bitmap != null) {
                                 profileImage.setImageBitmap(bitmap);
-                                Log.d("ImagenPerfil", "Imagen cargada exitosamente con descarga directa");
+                                Log.d(TAG, "Imagen cargada exitosamente con descarga directa");
                             } else {
                                 // Si falla, intentar con Glide como respaldo
                                 cargarImagenConGlide(imageUrl);
@@ -122,7 +130,7 @@ public class HomeFragment extends Fragment {
                         });
                     }
                 } catch (Exception e) {
-                    Log.e("ImagenPerfil", "Error al descargar directamente: " + e.getMessage());
+                    Log.e(TAG, "Error al descargar directamente: " + e.getMessage());
                     // En caso de error, intentar con Glide
                     if (getActivity() != null && !getActivity().isFinishing()) {
                         getActivity().runOnUiThread(() -> cargarImagenConGlide(imageUrl));
@@ -130,7 +138,7 @@ public class HomeFragment extends Fragment {
                 }
             }).start();
         } else {
-            Log.d("ImagenPerfil", "No hay URL de imagen, usando imagen predeterminada");
+            Log.d(TAG, "No hay URL de imagen, usando imagen predeterminada");
             // Usar imagen predeterminada
             profileImage.setImageResource(R.drawable.default_profile);
         }
@@ -146,14 +154,18 @@ public class HomeFragment extends Fragment {
             .error(R.drawable.default_profile)
             .listener(new RequestListener<Drawable>() {
                     @Override
-                    public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                        Log.e("ImagenPerfil", "Error al cargar la imagen: " + e);
+                    public boolean onLoadFailed(@Nullable GlideException e, @Nullable Object model,
+                                               @NonNull Target<Drawable> target, boolean isFirstResource) {
+                        Log.e(TAG, "Error al cargar la imagen: " + e);
                         return false;
                     }
 
                     @Override
-                    public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                        Log.d("ImagenPerfil", "Imagen cargada exitosamente desde: " + model);
+                    public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model,
+                                                  @NonNull Target<Drawable> target,
+                                                  @NonNull DataSource dataSource,
+                                                  boolean isFirstResource) {
+                        Log.d(TAG, "Imagen cargada exitosamente desde: " + model);
                         return false;
                     }
                 })
@@ -167,8 +179,8 @@ public class HomeFragment extends Fragment {
             com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
             
             String imageUrlWithTimestamp = url + "?nocache=" + Math.random() + "&t=" + System.currentTimeMillis();
-            Log.d("ImagenPerfil", "Actualizando imagen desde otro fragmento: " + imageUrlWithTimestamp);
-            
+            Log.d(TAG, "Actualizando imagen desde otro fragmento: " + imageUrlWithTimestamp);
+
             // Forzar la descarga directa de la imagen sin usar Glide
             new Thread(() -> {
                 try {
@@ -182,7 +194,7 @@ public class HomeFragment extends Fragment {
                             if (bitmap != null) {
                                 // Actualizar la ImageView con el bitmap descargado
                                 profileImage.setImageBitmap(bitmap);
-                                Log.d("ImagenPerfil", "Imagen en HomeFragment actualizada directamente con Bitmap");
+                                Log.d(TAG, "Imagen en HomeFragment actualizada directamente con Bitmap");
                             } else {
                                 // Si falla, intentar con Glide como respaldo
                                 Glide.with(requireContext())
@@ -196,7 +208,7 @@ public class HomeFragment extends Fragment {
                         });
                     }
                 } catch (Exception e) {
-                    Log.e("ImagenPerfil", "Error al descargar directamente en HomeFragment: " + e.getMessage());
+                    Log.e(TAG, "Error al descargar directamente en HomeFragment: " + e.getMessage());
                     // Si falla, intentar con Glide como respaldo en el hilo principal
                     if (getActivity() != null && !getActivity().isFinishing()) {
                         getActivity().runOnUiThread(() -> {
@@ -230,10 +242,6 @@ public class HomeFragment extends Fragment {
         fragmentTransaction.commit();
     }
 
-    public CircleImageView getProfileImageView() {
-        return profileImage;
-    }
-
     @Override
     public void onResume() {
         super.onResume();
@@ -247,11 +255,11 @@ public class HomeFragment extends Fragment {
         long now = System.currentTimeMillis();
         
         if (now - lastUpdated > 5 * 60 * 1000) { // 5 minutos
-            Log.d("ImagenPerfil", "Han pasado más de 5 minutos, recargando datos del perfil");
+            Log.d(TAG, "Han pasado más de 5 minutos, recargando datos del perfil");
             cargarImagenPerfil(); // Esto ya usa la URL con timestamp para forzar recarga
         }
     }
-    // Quitamos el BroadcastReceiver para simplificar y evitar errores
+
     @Override
     public void onStart() {
         super.onStart();

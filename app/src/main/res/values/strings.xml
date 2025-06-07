@@ -32,5 +32,8 @@
     <string name="combo_3_docenas_de_empanadas">Combo 3 Docenas</string>
     <string name="carrito">Carrito</string>
     <string name="datos_entrega">Datos Entrega</string>
-</resources>
 
+    <!-- Nuevas cadenas para el HomeFragment -->
+    <string name="bienvenido_usuario">Bienvenido %1$s</string>
+    <string name="ir_a_pagina_web">Ir a la página web</string>
+</resources>
