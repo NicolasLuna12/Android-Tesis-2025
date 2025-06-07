@@ -72,12 +72,17 @@ public class PaymentFragment extends Fragment {
         buttonNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Navegar al SuccessFragment
-                FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                fragmentTransaction.replace(R.id.main, new SuccessFragment());
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.commit();
+                try {
+                    // Navegar al SuccessFragment usando el contenedor correcto
+                    FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                    fragmentTransaction.replace(R.id.fragment_container_view, new SuccessFragment());
+                    fragmentTransaction.addToBackStack(null);
+                    fragmentTransaction.commit();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al navegar al SuccessFragment: " + e.getMessage());
+                    Toast.makeText(requireContext(), "Error en la transacción. Intente nuevamente.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
