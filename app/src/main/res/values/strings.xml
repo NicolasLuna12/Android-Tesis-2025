@@ -36,4 +36,12 @@
     <!-- Nuevas cadenas para el HomeFragment -->
     <string name="bienvenido_usuario">Bienvenido %1$s</string>
     <string name="ir_a_pagina_web">Ir a la página web</string>
+
+    <string-array name="metodos_pago">
+        <item>Selecciona en la próxima opción</item>
+        <item>Efectivo</item>
+        <item>Tarjeta de crédito</item>
+        <item>Mercado Pago</item>
+        <item>Paypal</item>
+    </string-array>
 </resources>

@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -16,6 +17,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.food_front.utils.ProfileManager;
 import com.example.food_front.utils.SessionManager;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -33,6 +35,14 @@ public class DatosEntregaFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_datos_entrega, container, false);
+
+        // Obtener la dirección guardada en el login
+        EditText editTextDireccion = view.findViewById(R.id.editTextDireccionEntrega);
+        ProfileManager profileManager = new ProfileManager(requireContext());
+        String direccion = profileManager.getAddress();
+        if (direccion != null && !direccion.isEmpty()) {
+            editTextDireccion.setText(direccion);
+        }
 
         // Find the button and set the click listener
         Button button = view.findViewById(R.id.btnHacerPedido);

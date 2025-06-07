@@ -4,11 +4,16 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.view.Gravity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -18,6 +23,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -123,63 +132,22 @@ public class ProfileFragment extends Fragment {
             RequestQueue queue = Volley.newRequestQueue(requireContext());
             JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
-                    StringBuilder pedidosStr = new StringBuilder();
                     try {
                         if (response.has("results")) {
                             org.json.JSONArray pedidos = response.getJSONArray("results");
                             if (pedidos.length() == 0) {
-                                pedidosStr.append("No tienes pedidos.");
+                                // No hay pedidos, mostrar mensaje simple
+                                mostrarMensajeNoPedidos();
                             } else {
-                                for (int i = 0; i < pedidos.length(); i++) {
-                                    org.json.JSONObject pedido = pedidos.getJSONObject(i);
-
-                                    // Usar id_pedidos si está disponible, o el índice + 1 como respaldo
-                                    int numeroPedido = pedido.has("id_pedidos") ?
-                                            pedido.getInt("id_pedidos") :
-                                            (i + 1);
-
-                                    pedidosStr.append("\uD83D\uDCC5 Pedido #").append(numeroPedido).append("\n");
-
-                                    // El resto del código sigue igual para mostrar los detalles
-                                    if (pedido.has("fecha_pedido")) pedidosStr.append("  Fecha: ").append(pedido.getString("fecha_pedido")).append("\n");
-                                    if (pedido.has("direccion_entrega")) pedidosStr.append("  Entrega: ").append(pedido.getString("direccion_entrega")).append("\n");
-                                    if (pedido.has("estado")) pedidosStr.append("  Estado: ").append(pedido.getString("estado")).append("\n");
-                                    if (pedido.has("detalles")) {
-                                        org.json.JSONArray detalles = pedido.getJSONArray("detalles");
-                                        pedidosStr.append("  Productos:\n");
-                                        for (int j = 0; j < detalles.length(); j++) {
-                                            org.json.JSONObject detalle = detalles.getJSONObject(j);
-                                            pedidosStr.append("    - Cantidad: ").append(detalle.optInt("cantidad_productos", 0));
-                                            pedidosStr.append(", Precio: $").append(detalle.optDouble("precio_producto", 0));
-                                            pedidosStr.append(", Subtotal: $").append(detalle.optDouble("subtotal", 0)).append("\n");
-                                        }
-                                    }
-                                    pedidosStr.append("\n────────────────────────────\n\n");
-                                }
+                                // Hay pedidos, mostrar diálogo con opciones de edición
+                                mostrarDialogoConPedidos(pedidos);
                             }
                         } else {
-                            pedidosStr.append("No se encontraron pedidos.\n\nRespuesta completa:\n");
-                            pedidosStr.append(response.toString());
+                            mostrarMensajeSinResultados(response);
                         }
                     } catch (Exception e) {
-                        pedidosStr.append("Error al procesar los pedidos.\n\nRespuesta completa:\n");
-                        pedidosStr.append(response.toString());
+                        mostrarMensajeError(e, response);
                     }
-                    // Crear un TextView scrollable para mostrar los pedidos
-                    android.widget.ScrollView scrollView = new android.widget.ScrollView(requireContext());
-                    android.widget.TextView textView = new android.widget.TextView(requireContext());
-                    textView.setText(pedidosStr.toString());
-                    textView.setTextSize(16);
-                    textView.setPadding(32, 32, 32, 32);
-                    textView.setVerticalScrollBarEnabled(true);
-                    scrollView.addView(textView);
-                    int dp = (int) (350 * getResources().getDisplayMetrics().density); // altura máxima
-                    scrollView.setLayoutParams(new android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp));
-                    new AlertDialog.Builder(requireContext())
-                        .setTitle("Mis pedidos")
-                        .setView(scrollView)
-                        .setPositiveButton("OK", null)
-                        .show();
                 },
                 error -> {
                     Toast.makeText(requireContext(), "Error al obtener pedidos", Toast.LENGTH_SHORT).show();
@@ -199,6 +167,305 @@ public class ProfileFragment extends Fragment {
         });
 
         return view;
+    }
+
+    /**
+     * Muestra un mensaje cuando no hay pedidos registrados
+     */
+    private void mostrarMensajeNoPedidos() {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Mis pedidos")
+            .setMessage("No tienes pedidos registrados.")
+            .setPositiveButton("OK", null)
+            .show();
+    }
+
+    /**
+     * Muestra mensaje de error cuando la respuesta no tiene resultados
+     */
+    private void mostrarMensajeSinResultados(JSONObject response) {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Sin resultados")
+            .setMessage("No se encontraron pedidos.\n\nRespuesta del servidor: " + response.toString())
+            .setPositiveButton("OK", null)
+            .show();
+    }
+
+    /**
+     * Muestra un mensaje de error cuando hay un problema al procesar la respuesta
+     */
+    private void mostrarMensajeError(Exception e, JSONObject response) {
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Error")
+            .setMessage("Ocurrió un problema al procesar los pedidos: " + e.getMessage() +
+                       "\n\nRespuesta: " + response.toString())
+            .setPositiveButton("OK", null)
+            .show();
+    }
+
+    /**
+     * Muestra un diálogo con la lista de pedidos y opciones para editar la dirección de entrega
+     */
+    private void mostrarDialogoConPedidos(org.json.JSONArray pedidos) throws JSONException {
+        // Crear un layout vertical para contener la lista de pedidos
+        LinearLayout contenedorPrincipal = new LinearLayout(requireContext());
+        contenedorPrincipal.setOrientation(LinearLayout.VERTICAL);
+        contenedorPrincipal.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        contenedorPrincipal.setPadding(32, 32, 32, 32);
+
+        // ScrollView para hacer desplazable la lista
+        ScrollView scrollView = new ScrollView(requireContext());
+        scrollView.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (int) (350 * getResources().getDisplayMetrics().density)));
+
+        // Crear un LinearLayout para los pedidos dentro del ScrollView
+        LinearLayout contenedorPedidos = new LinearLayout(requireContext());
+        contenedorPedidos.setOrientation(LinearLayout.VERTICAL);
+        contenedorPedidos.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        // Procesar cada pedido y mostrar en el contenedor
+        for (int i = 0; i < pedidos.length(); i++) {
+            org.json.JSONObject pedido = pedidos.getJSONObject(i);
+
+            // Usar id_pedidos si está disponible, o el índice + 1 como respaldo
+            int numeroPedido = pedido.has("id_pedidos") ?
+                    pedido.getInt("id_pedidos") : (i + 1);
+
+            // Crear un CardView para cada pedido
+            CardView cardPedido = new CardView(requireContext());
+            cardPedido.setLayoutParams(new CardView.LayoutParams(
+                    CardView.LayoutParams.MATCH_PARENT, CardView.LayoutParams.WRAP_CONTENT));
+            cardPedido.setRadius(16);
+            cardPedido.setCardElevation(8);
+            cardPedido.setCardBackgroundColor(Color.parseColor("#FFFFFF"));
+            cardPedido.setUseCompatPadding(true);
+
+            // Layout vertical para el contenido de la tarjeta
+            LinearLayout contenidoCard = new LinearLayout(requireContext());
+            contenidoCard.setOrientation(LinearLayout.VERTICAL);
+            contenidoCard.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            contenidoCard.setPadding(16, 16, 16, 16);
+
+            // Título del pedido
+            TextView tvTituloPedido = new TextView(requireContext());
+            tvTituloPedido.setText("\uD83D\uDCC5 Pedido #" + numeroPedido);
+            tvTituloPedido.setTextSize(18);
+            tvTituloPedido.setTypeface(Typeface.DEFAULT_BOLD);
+            tvTituloPedido.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            tvTituloPedido.setPadding(0, 0, 0, 8);
+            contenidoCard.addView(tvTituloPedido);
+
+            // Fecha del pedido
+            if (pedido.has("fecha_pedido")) {
+                TextView tvFecha = new TextView(requireContext());
+                tvFecha.setText("Fecha: " + pedido.getString("fecha_pedido"));
+                tvFecha.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                tvFecha.setPadding(16, 4, 0, 4);
+                contenidoCard.addView(tvFecha);
+            }
+
+            // Estado del pedido
+            if (pedido.has("estado")) {
+                TextView tvEstado = new TextView(requireContext());
+                tvEstado.setText("Estado: " + pedido.getString("estado"));
+                tvEstado.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                tvEstado.setPadding(16, 4, 0, 4);
+                contenidoCard.addView(tvEstado);
+            }
+
+
+
+
+
+            // Layout horizontal para dirección y botón
+            LinearLayout layoutDireccion = new LinearLayout(requireContext());
+            layoutDireccion.setOrientation(LinearLayout.HORIZONTAL);
+            layoutDireccion.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+
+
+
+
+            // ID de pedido para la actualización
+            final int pedidoId = numeroPedido;
+
+
+
+
+            // Detalles del pedido (productos)
+            if (pedido.has("detalles")) {
+                org.json.JSONArray detalles = pedido.getJSONArray("detalles");
+                if (detalles.length() > 0) {
+                    TextView tvProductosHeader = new TextView(requireContext());
+                    tvProductosHeader.setText("Productos:");
+                    tvProductosHeader.setTypeface(Typeface.DEFAULT_BOLD);
+                    tvProductosHeader.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                    tvProductosHeader.setPadding(16, 8, 0, 4);
+                    contenidoCard.addView(tvProductosHeader);
+
+                    for (int j = 0; j < detalles.length(); j++) {
+                        org.json.JSONObject detalle = detalles.getJSONObject(j);
+                        TextView tvProducto = new TextView(requireContext());
+                        StringBuilder productoInfo = new StringBuilder();
+                        productoInfo.append("- Cantidad: ").append(detalle.optInt("cantidad_productos", 0));
+                        productoInfo.append(", Precio: $").append(detalle.optDouble("precio_producto", 0));
+                        productoInfo.append(", Subtotal: $").append(detalle.optDouble("subtotal", 0));
+
+                        tvProducto.setText(productoInfo.toString());
+                        tvProducto.setLayoutParams(new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                        tvProducto.setPadding(32, 2, 0, 2);
+                        contenidoCard.addView(tvProducto);
+                    }
+                }
+            }
+
+            // Agregar el contenido a la tarjeta
+            cardPedido.addView(contenidoCard);
+
+            // Agregar la tarjeta al contenedor principal
+            contenedorPedidos.addView(cardPedido);
+        }
+
+        // Agregar el contenedor de pedidos al ScrollView
+        scrollView.addView(contenedorPedidos);
+
+        // Agregar el ScrollView al contenedor principal
+        contenedorPrincipal.addView(scrollView);
+
+        // Mostrar el diálogo con todos los pedidos
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Mis pedidos")
+            .setView(contenedorPrincipal)
+            .setPositiveButton("Cerrar", null)
+            .show();
+    }
+
+    /**
+     * Muestra un diálogo para editar la dirección de entrega de un pedido
+     * @param pedidoId ID del pedido a actualizar
+     * @param direccionActual La dirección actual del pedido
+     * @param tvDireccion El TextView que muestra la dirección para actualizarlo
+     */
+    private void mostrarDialogoEditarDireccion(int pedidoId, String direccionActual, TextView tvDireccion) {
+        // Crear un EditText para la nueva dirección
+        final EditText input = new EditText(requireContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setText(direccionActual);
+        input.setSingleLine(false);
+        input.setLines(3);
+        input.setMaxLines(5);
+        input.setGravity(Gravity.TOP | Gravity.START);
+
+        // Crear y mostrar el diálogo
+        new AlertDialog.Builder(requireContext())
+            .setTitle("Editar dirección de entrega")
+            .setView(input)
+            .setPositiveButton("Guardar", (dialog, which) -> {
+                String nuevaDireccion = input.getText().toString().trim();
+                if (!nuevaDireccion.isEmpty()) {
+                    // Actualizar la dirección en el backend
+                    actualizarDireccionEnBackend(pedidoId, nuevaDireccion, tvDireccion);
+                } else {
+                    Toast.makeText(requireContext(), "La dirección no puede estar vacía", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancelar", null)
+            .show();
+    }
+
+    /**
+     * Actualiza la dirección de entrega en el backend
+     * @param pedidoId ID del pedido a actualizar
+     * @param nuevaDireccion Nueva dirección de entrega
+     * @param tvDireccion TextView para actualizar si la operación es exitosa
+     */
+    private void actualizarDireccionEnBackend(int pedidoId, String nuevaDireccion, TextView tvDireccion) {
+        // URL para actualizar la dirección de entrega
+        String url = "https://backmobile1.onrender.com/appCART/actualizar_direccion/";
+
+        // Mostrar progreso
+        ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Actualizando dirección...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        // Crear el cuerpo de la solicitud
+        JSONObject requestBody = new JSONObject();
+        try {
+            requestBody.put("id_pedidos", pedidoId);
+            requestBody.put("direccion_entrega", nuevaDireccion);
+        } catch (JSONException e) {
+            progressDialog.dismiss();
+            Toast.makeText(requireContext(), "Error al preparar los datos", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Crear la solicitud
+        JsonObjectRequest request = new JsonObjectRequest(
+            Request.Method.PUT,
+            url,
+            requestBody,
+            response -> {
+                progressDialog.dismiss();
+                try {
+                    boolean success = response.optBoolean("success", true);
+                    if (success) {
+                        // Actualizar la UI con la nueva dirección
+                        tvDireccion.setText("Dirección: " + nuevaDireccion);
+                        Toast.makeText(requireContext(), "Dirección actualizada correctamente", Toast.LENGTH_SHORT).show();
+                    } else {
+                        String message = response.optString("message", "Error desconocido");
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), "Error al procesar la respuesta", Toast.LENGTH_SHORT).show();
+                }
+            },
+            error -> {
+                progressDialog.dismiss();
+
+                String mensaje = "Error al actualizar la dirección";
+                if (error.networkResponse != null) {
+                    mensaje += " (Código: " + error.networkResponse.statusCode + ")";
+                    try {
+                        String responseBody = new String(error.networkResponse.data, "utf-8");
+                        JSONObject errorObj = new JSONObject(responseBody);
+                        if (errorObj.has("message")) {
+                            mensaje += ": " + errorObj.getString("message");
+                        }
+                    } catch (Exception e) {
+                        // Ignorar errores al leer el mensaje
+                    }
+                }
+
+                Toast.makeText(requireContext(), mensaje, Toast.LENGTH_SHORT).show();
+            }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                String token = sessionManager.getToken();
+                if (token != null) {
+                    headers.put("Authorization", "Bearer " + token);
+                }
+                headers.put("Content-Type", "application/json");
+                return headers;
+            }
+        };
+
+        // Agregar la solicitud a la cola
+        RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
+        requestQueue.add(request);
     }
 
     private void displayUserProfile() {
