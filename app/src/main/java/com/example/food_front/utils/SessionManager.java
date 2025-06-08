@@ -7,13 +7,16 @@ import android.util.Log;
 public class SessionManager {
     private static final String PREF_NAME = "user_session";
     private static final String KEY_TOKEN = "token";
+    private static final String KEY_EMAIL = "email";
 
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
 
     public SessionManager(Context context) {
-        sharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        Context appContext = context.getApplicationContext();
+        sharedPreferences = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor = sharedPreferences.edit();
+        Log.d("SessionManager", "SessionManager creado con contexto: " + appContext);
     }
 
     // Guardar el token
@@ -26,6 +29,20 @@ public class SessionManager {
     // leer el token
     public String getToken() {
         return sharedPreferences.getString(KEY_TOKEN, null);
+    }
+
+    // Guardar el email
+    public void saveEmail(String email) {
+        editor.putString(KEY_EMAIL, email);
+        editor.apply();
+        Log.d("SessionManager", "Email guardado en SharedPreferences: " + email);
+    }
+
+    // Leer el email
+    public String getUserEmail() {
+        String email = sharedPreferences.getString(KEY_EMAIL, null);
+        Log.d("SessionManager", "getUserEmail() devuelve: " + email);
+        return email;
     }
 
     // Borrar la session
