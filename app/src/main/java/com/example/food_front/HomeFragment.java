@@ -103,12 +103,12 @@ public class HomeFragment extends Fragment {
         // cargarProductos(0); // <--- QUITADO para que Home no muestre la carta por defecto
 
         // Modificamos los listeners para cargar productos en el mismo fragmento
-        button1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
-        button2.setOnClickListener(v -> cargarProductos(1)); // Empanadas id 1
-        button3.setOnClickListener(v -> cargarProductos(0)); // Todos los productos
-        button4.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
-        imageView1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
-        imageView2.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
+        button1.setOnClickListener(v -> navegarAProductosConFiltro(3)); // Hamburguesas id 3
+        button2.setOnClickListener(v -> navegarAProductosConFiltro(1)); // Empanadas id 1
+        button3.setOnClickListener(v -> navegarAProductosConFiltro(0)); // Todos los productos
+        button4.setOnClickListener(v -> navegarAProductosConFiltro(2)); // Lomitos id 2
+        imageView1.setOnClickListener(v -> navegarAProductosConFiltro(3)); // Hamburguesas id 3
+        imageView2.setOnClickListener(v -> navegarAProductosConFiltro(2)); // Lomitos id 2
 
         return view;
     }
@@ -376,5 +376,18 @@ public class HomeFragment extends Fragment {
     public void onStop() {
         super.onStop();
         // Ya no necesitamos desregistrar nada
+    }
+
+    // Nueva función para navegar a ProductsFragment con filtro
+    private void navegarAProductosConFiltro(int categoriaId) {
+        ProductsFragment productsFragment = new ProductsFragment();
+        Bundle args = new Bundle();
+        args.putInt("categoria_id", categoriaId);
+        productsFragment.setArguments(args);
+        requireActivity().getSupportFragmentManager()
+            .beginTransaction()
+            .replace(R.id.fragment_container_view, productsFragment)
+            .addToBackStack(null)
+            .commit();
     }
 }
