@@ -286,9 +286,7 @@ public class CartFragment extends Fragment {
     }    private void rediretToCheckout() {
         FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        
-        // Redirigir directamente a PaymentFragment en lugar de a DatosEntregaFragment
-        // para poder utilizar la integración de MercadoPago
+        // Redirigir directamente a PaymentFragment (como estaba antes)
         fragmentTransaction.replace(R.id.fragment_container_view, new PaymentFragment());
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();

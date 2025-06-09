@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Check if a token exists to determine the initial fragment
         if (sessionManager.getToken() != null) {
-            mostrarHome(); // Show HomeFragment if logged in
+            mostrarHomeLimpiandoBackStack(); // Show HomeFragment if logged in, limpiando el back stack
         } else {
             mostrarLogin(); // Show LoginFragment if not logged in
         }
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
                 int itemId = item.getItemId();
                 if (itemId == R.id.home) {
-                    mostrarHome(); // Show HomeFragment
+                    mostrarHomeLimpiandoBackStack(); // Show HomeFragment limpiando el back stack
                     return true;
                 } else if (itemId == R.id.profile || itemId == R.id.menu || itemId == R.id.carrito) {
                     if (sessionManager.getToken() == null ){
@@ -101,6 +101,14 @@ public class MainActivity extends AppCompatActivity {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment(), "HomeFragment");
+        fragmentTransaction.commit();
+    }
+
+    public void mostrarHomeLimpiandoBackStack() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment(), "HomeFragment");
         fragmentTransaction.commit();
     }

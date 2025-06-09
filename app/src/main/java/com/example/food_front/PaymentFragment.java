@@ -82,6 +82,7 @@ public class PaymentFragment extends Fragment implements ConnectionMonitor.Conne
         // Inicializar vistas
         radioButtonCreditCard = view.findViewById(R.id.radioButton4);
         radioButtonMercadoPago = view.findViewById(R.id.radioButton6);
+        RadioButton radioButtonPaypal = view.findViewById(R.id.radioButtonPaypal);
         buttonPayNow = view.findViewById(R.id.button2);
         buttonRetry = view.findViewById(R.id.buttonRetry);
         progressBar = view.findViewById(R.id.progressBarPayment);
@@ -92,6 +93,8 @@ public class PaymentFragment extends Fragment implements ConnectionMonitor.Conne
         textViewError = view.findViewById(R.id.textViewError);        
         // Configurar texto para la opción de MercadoPago
         radioButtonMercadoPago.setText("MercadoPago");
+        // Configurar texto para la opción de PayPal
+        radioButtonPaypal.setText("PayPal");
         
         // Configurar WebView según las recomendaciones de MercadoPago
         WebSettings webSettings = webViewPayment.getSettings();
@@ -208,6 +211,13 @@ public class PaymentFragment extends Fragment implements ConnectionMonitor.Conne
                     procesarPagoConMercadoPago();
                 } else if (radioButtonCreditCard.isChecked()) {
                     Toast.makeText(requireContext(), "Pago con tarjeta no implementado aún", Toast.LENGTH_SHORT).show();
+                } else if (radioButtonPaypal.isChecked()) {
+                    // Simular pago exitoso con PayPal: ir directo a SuccessFragment
+                    requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container_view, new SuccessFragment())
+                        .addToBackStack(null)
+                        .commit();
                 } else {
                     Toast.makeText(requireContext(), "Por favor selecciona un método de pago", Toast.LENGTH_SHORT).show();
                 }

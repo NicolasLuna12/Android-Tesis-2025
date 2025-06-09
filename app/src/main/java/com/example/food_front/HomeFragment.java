@@ -99,6 +99,8 @@ public class HomeFragment extends Fragment {
         // Mostrar el nombre del usuario e imagen de perfil
         mostrarNombreUsuario();
         cargarImagenPerfil();
+        // ...NO cargar productos automáticamente...
+        // cargarProductos(0); // <--- QUITADO para que Home no muestre la carta por defecto
 
         // Modificamos los listeners para cargar productos en el mismo fragmento
         button1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
@@ -107,9 +109,6 @@ public class HomeFragment extends Fragment {
         button4.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
         imageView1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
         imageView2.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
-        
-        // Cargamos todos los productos por defecto
-        cargarProductos(0);
 
         return view;
     }

@@ -76,12 +76,17 @@ public class SuccessFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 try {
-                    FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment());
-                    // Limpiar la pila de retroceso para evitar comportamientos inesperados
-                    fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                    fragmentTransaction.commit();
+                    // Llamar a MainActivity para limpiar la pila y mostrar HomeFragment correctamente
+                    if (getActivity() instanceof com.example.food_front.MainActivity) {
+                        ((com.example.food_front.MainActivity) getActivity()).mostrarHomeLimpiandoBackStack();
+                    } else {
+                        // Fallback por si acaso
+                        FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
+                        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                        fragmentTransaction.replace(R.id.fragment_container_view, new HomeFragment());
+                        fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+                        fragmentTransaction.commit();
+                    }
                 } catch (Exception e) {
                     Log.e(TAG, "Error al navegar al HomeFragment: " + e.getMessage());
                     Toast.makeText(requireContext(), "Error al volver a inicio. Intente nuevamente.", Toast.LENGTH_SHORT).show();

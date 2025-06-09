@@ -88,6 +88,24 @@
                         android:padding="8dp"
                         app:srcCompat="@drawable/mp" />
 
+                    <RadioButton
+                        android:id="@+id/radioButtonPaypal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="32dp"
+                        android:background="#C77600"
+                        android:textColor="#FFFFFF"
+                        android:text="PayPal" />
+                    <ImageView
+                        android:id="@+id/imageViewPaypal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="66dp"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="5dp"
+                        android:background="#333333"
+                        android:padding="8dp"
+                        app:srcCompat="@drawable/paypal" />
+
                 </LinearLayout>
             </FrameLayout>
         </RadioGroup>
