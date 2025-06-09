@@ -19,6 +19,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.food_front.utils.SessionManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -144,6 +145,9 @@ public class RegisterFragment extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         Toast.makeText(getActivity(), "Registro exitoso", Toast.LENGTH_SHORT).show();
+                        // Guardar el email en SessionManager tras registro exitoso
+                        SessionManager sessionManager = new SessionManager(requireContext());
+                        sessionManager.saveEmail(etCorreo.getText().toString());
                         replaceFragment(new SuccessRegistryFragment());
                     }
                 },

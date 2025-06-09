@@ -67,19 +67,17 @@ public class DatosEntregaFragment extends Fragment {
         SessionManager sessionManager = new SessionManager(requireContext());
         String token = sessionManager.getToken();
 
-        // POST request
+        // POST request para confirmar pedido
         StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        // If the request is successful, show a Toast and switch fragments
-                        Toast.makeText(requireContext(), "Pedido confirmado", Toast.LENGTH_SHORT).show();
-                        replaceFragment(new PaymentFragment());
+                        // Si el pedido se confirma, crear preferencia de pago en backmp
+                        crearPreferenciaPago(token);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                // Handle error
                 Snackbar.make(requireView(), "Error al confirmar pedido. Inténtalo más tarde.",
                         Snackbar.LENGTH_LONG).show();
                 Log.e("VolleyError", "Detalles del error", error);
@@ -97,6 +95,52 @@ public class DatosEntregaFragment extends Fragment {
         queue.add(stringRequest);
     }
 
+    /**
+     * Crea la preferencia de pago en el backend de MercadoPago
+     */
+    private void crearPreferenciaPago(String token) {
+        RequestQueue queue = Volley.newRequestQueue(requireContext());
+        String url = "https://backmp.onrender.com/payment/create-preference/";
+
+        ProfileManager profileManager = new ProfileManager(requireContext());
+        String email = profileManager.getEmail();
+        if (email == null) email = "";
+
+        // Construir el body JSON
+        String body = String.format("{\"user_token\":\"%s\",\"email\":\"%s\"}", token, email);
+
+        com.android.volley.toolbox.StringRequest request = new com.android.volley.toolbox.StringRequest(
+                Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Si la preferencia se crea correctamente, pasar a PaymentFragment
+                        Toast.makeText(requireContext(), "Pedido confirmado", Toast.LENGTH_SHORT).show();
+                        replaceFragment(new PaymentFragment());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Snackbar.make(requireView(), "Error al crear preferencia de pago.", Snackbar.LENGTH_LONG).show();
+                        Log.e("VolleyError", "Error al crear preferencia de pago", error);
+                    }
+                }) {
+            @Override
+            public Map<String, String> getHeaders() {
+                Map<String, String> headers = new HashMap<>();
+                headers.put("Authorization", "Bearer " + token);
+                headers.put("Content-Type", "application/json");
+                return headers;
+            }
+
+            @Override
+            public byte[] getBody() {
+                return body.getBytes();
+            }
+        };
+        queue.add(request);
+    }
 
     private void replaceFragment(Fragment newFragment) {
         if (isAdded()) {

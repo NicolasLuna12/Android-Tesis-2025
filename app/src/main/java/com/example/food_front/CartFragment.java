@@ -283,18 +283,16 @@ public class CartFragment extends Fragment {
             // Maneja el caso en que no hay token
             Toast.makeText(getContext(), "Debes iniciar sesión para agregar productos al carrito", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void rediretToCheckout() {
+    }    private void rediretToCheckout() {
         FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container_view, new DatosEntregaFragment());
+        
+        // Redirigir directamente a PaymentFragment en lugar de a DatosEntregaFragment
+        // para poder utilizar la integración de MercadoPago
+        fragmentTransaction.replace(R.id.fragment_container_view, new PaymentFragment());
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
-        }
-
-
-    private void rediretToEmptyCart() {
+        }    private void rediretToEmptyCart() {
         FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container_view, new EmptyCartFragment());
