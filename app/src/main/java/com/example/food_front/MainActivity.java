@@ -74,6 +74,21 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+
+        // Manejar deep link también al abrir la app desde cerrado
+        Intent intent = getIntent();
+        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+            String scheme = intent.getData().getScheme();
+            String host = intent.getData().getHost();
+            if ("foodapp".equals(scheme) && "success".equals(host)) {
+                getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container_view, new SuccessFragment())
+                    .addToBackStack(null)
+                    .commit();
+                return;
+            }
+        }
     }
 
     public void mostrarLogin() {
