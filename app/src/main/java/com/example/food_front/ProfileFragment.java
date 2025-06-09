@@ -166,6 +166,17 @@ public class ProfileFragment extends Fragment {
             queue.add(request);
         });
 
+        // Encontrar el TextView de "Información legal"
+        TextView legalInfo = view.findViewById(R.id.legal_info);
+        legalInfo.setOnClickListener(v -> {
+            // Navegar al fragmento del EULA
+            EulaFragment eulaFragment = new EulaFragment();
+            getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container_view, eulaFragment)
+                .addToBackStack(null)
+                .commit();
+        });
+
         return view;
     }
 
