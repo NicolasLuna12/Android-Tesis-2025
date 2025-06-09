@@ -177,6 +177,17 @@ public class ProfileFragment extends Fragment {
                 .commit();
         });
 
+        // Botón Eliminar cuenta
+        Button btnDeleteAccount = view.findViewById(R.id.btn_delete_account);
+        btnDeleteAccount.setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                .setTitle("Eliminar cuenta")
+                .setMessage("¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.")
+                .setPositiveButton("Sí, eliminar", (dialog, which) -> eliminarCuenta())
+                .setNegativeButton("Cancelar", null)
+                .show();
+        });
+
         return view;
     }
 
@@ -973,5 +984,88 @@ public class ProfileFragment extends Fragment {
             })
             .setNegativeButton("Cancelar", null)
             .show();
+    }
+
+    // Método para eliminar la cuenta
+    private void eliminarCuenta() {
+        String url = "https://backmobile1.onrender.com/appUSERS/delete/";
+        ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Eliminando cuenta...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        com.android.volley.toolbox.StringRequest request = new com.android.volley.toolbox.StringRequest(
+            com.android.volley.Request.Method.DELETE,
+            url,
+            response -> {
+                progressDialog.dismiss();
+                Toast.makeText(requireContext(), "Cuenta eliminada satisfactoriamente", Toast.LENGTH_LONG).show();
+                sessionManager.logout();
+                Intent intent = new Intent(requireActivity(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                requireActivity().finish();
+            },
+            error -> {
+                progressDialog.dismiss();
+                
+                // Mejor manejo de errores
+                String errorMsg = "Error al eliminar la cuenta: ";
+                
+                if (error.networkResponse != null) {
+                    int statusCode = error.networkResponse.statusCode;
+                    errorMsg += "Código: " + statusCode;
+                    
+                    // Intentar obtener el cuerpo de la respuesta de error
+                    try {
+                        String responseBody = new String(error.networkResponse.data, "utf-8");
+                        Log.e("EliminarCuenta", "Error response body: " + responseBody);
+                        errorMsg += " - " + responseBody;
+                        
+                        // Si es error 500 pero la cuenta fue desactivada correctamente en el backend
+                        if (statusCode == 500 && responseBody.contains("Cuenta desactivada correctamente")) {
+                            // A pesar del error 500, el backend procesó correctamente la solicitud
+                            Toast.makeText(requireContext(), "Cuenta eliminada satisfactoriamente", Toast.LENGTH_LONG).show();
+                            sessionManager.logout();
+                            Intent intent = new Intent(requireActivity(), MainActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            startActivity(intent);
+                            requireActivity().finish();
+                            return;
+                        }
+                    } catch (Exception e) {
+                        Log.e("EliminarCuenta", "Error al leer el cuerpo de la respuesta de error", e);
+                    }
+                } else if (error instanceof com.android.volley.TimeoutError) {
+                    errorMsg = "El servidor tardó demasiado en responder.";
+                } else if (error instanceof com.android.volley.NoConnectionError) {
+                    errorMsg = "No hay conexión a internet. Por favor, verifica tu conexión e intenta nuevamente.";
+                } else {
+                    errorMsg += error.toString();
+                }
+                
+                Log.e("EliminarCuenta", errorMsg, error);
+                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+            }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Map<String, String> headers = new HashMap<>();
+                String token = sessionManager.getToken();
+                if (token != null) {
+                    headers.put("Authorization", "Bearer " + token);
+                }
+                return headers;
+            }
+        };
+        
+        // Establecer una política de reintento con timeout más largo
+        request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+            30000, // 30 segundos de timeout
+            1,     // 1 reintento
+            1.5f   // backoff multiplier
+        ));
+        
+        com.android.volley.toolbox.Volley.newRequestQueue(requireContext()).add(request);
     }
 }

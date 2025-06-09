@@ -148,7 +148,11 @@ public class RegisterFragment extends Fragment {
                         // Guardar el email en SessionManager tras registro exitoso
                         SessionManager sessionManager = new SessionManager(requireContext());
                         sessionManager.saveEmail(etCorreo.getText().toString());
-                        replaceFragment(new SuccessRegistryFragment());
+                        // Redirigir al login tras registro exitoso
+                        requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container_view, new LoginFragment())
+                            .commit();
                     }
                 },
                 new Response.ErrorListener() {
