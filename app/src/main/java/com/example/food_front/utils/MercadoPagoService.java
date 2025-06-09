@@ -73,6 +73,9 @@ public class MercadoPagoService {
                 Log.w(TAG, "Email no disponible. Usando email predeterminado.");
             }
 
+            // Indicar el entorno para el backend (mobile)
+            jsonBody.put("env", "mobile");
+
             // Log para depuración
             Log.d(TAG, "Enviando solicitud a: " + url);
             Log.d(TAG, "Cuerpo de la solicitud: " + jsonBody.toString());            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, jsonBody,

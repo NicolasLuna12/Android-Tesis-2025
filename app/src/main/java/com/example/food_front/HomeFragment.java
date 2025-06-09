@@ -1,33 +1,46 @@
 package com.example.food_front;
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.util.Log;
-import android.graphics.drawable.Drawable;
-
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.load.DataSource;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.example.food_front.adapters.ProductoAdapter;
+import com.example.food_front.models.Producto;
 import com.example.food_front.utils.ProfileManager;
 import com.example.food_front.utils.SessionManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -35,6 +48,9 @@ public class HomeFragment extends Fragment {
     private TextView tvName;
     private CircleImageView profileImage;
     private ProfileManager profileManager;
+    private RecyclerView recyclerView;
+    private ProductoAdapter adapter;
+    private List<Producto> productList;
 
     private static final String TAG = "HomeFragment";
 
@@ -53,6 +69,21 @@ public class HomeFragment extends Fragment {
         ImageView imageView1 = view.findViewById(R.id.imageView3);
         ImageView imageView2 = view.findViewById(R.id.imageView4);
         FloatingActionButton btnWebsite = view.findViewById(R.id.btnWebsite);
+        
+        // Inicializar RecyclerView para productos
+        recyclerView = view.findViewById(R.id.recyclerview_productos_home);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        // Inicializar lista de productos y adaptador
+        productList = new ArrayList<>();
+        adapter = new ProductoAdapter(productList, new ProductoAdapter.OnProductoClickListener() {
+            @Override
+            public void onAgregarCarritoClick(Producto producto) {
+                agregarProductoAlCarrito(producto.getIdProducto());
+            }
+        });
+        
+        recyclerView.setAdapter(adapter);
 
         // Configurar el onClick para el botón de navegación web
         btnWebsite.setOnClickListener(v -> {
@@ -62,9 +93,6 @@ public class HomeFragment extends Fragment {
             startActivity(intent);
         });
 
-        // Ya no necesitamos este clickListener en el texto
-        // TextView tvSlogan = view.findViewById(R.id.textView2);
-
         profileManager = new ProfileManager(requireContext());
         SessionManager sessionManager = new SessionManager(requireContext());
 
@@ -72,13 +100,16 @@ public class HomeFragment extends Fragment {
         mostrarNombreUsuario();
         cargarImagenPerfil();
 
-        // Asegura que los botones también usen los mismos IDs que las imágenes
-        button1.setOnClickListener(v -> abrirProductosConFiltro(3)); // Hamburguesas id 3
-        button2.setOnClickListener(v -> abrirProductosConFiltro(1)); // Empanadas id 1
-        button3.setOnClickListener(v -> replaceFragment(new ProductsFragment())); // Todos
-        button4.setOnClickListener(v -> abrirProductosConFiltro(2)); // Lomitos id 2
-        imageView1.setOnClickListener(v -> abrirProductosConFiltro(3)); // Hamburguesas id 3
-        imageView2.setOnClickListener(v -> abrirProductosConFiltro(2)); // Lomitos id 2
+        // Modificamos los listeners para cargar productos en el mismo fragmento
+        button1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
+        button2.setOnClickListener(v -> cargarProductos(1)); // Empanadas id 1
+        button3.setOnClickListener(v -> cargarProductos(0)); // Todos los productos
+        button4.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
+        imageView1.setOnClickListener(v -> cargarProductos(3)); // Hamburguesas id 3
+        imageView2.setOnClickListener(v -> cargarProductos(2)); // Lomitos id 2
+        
+        // Cargamos todos los productos por defecto
+        cargarProductos(0);
 
         return view;
     }
@@ -226,20 +257,96 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void abrirProductosConFiltro(int categoriaId) {
-        ProductsFragment fragment = new ProductsFragment();
-        Bundle args = new Bundle();
-        args.putInt("categoria_id", categoriaId);
-        fragment.setArguments(args);
-        replaceFragment(fragment);
+    // Método para cargar productos según la categoría
+    private void cargarProductos(int categoriaId) {
+        String url = "https://backmobile1.onrender.com/api/producto/";
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                response -> {
+                    try {
+                        // Parsear el JSON
+                        JSONArray jsonArray = new JSONArray(response);
+                        productList.clear();
+
+                        for (int i = 0; i < jsonArray.length(); i++) {
+                            JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+                            // Obtener los detalles del producto desde el JSON
+                            int id_producto = jsonObject.getInt("id_producto");
+                            String nombre_producto = jsonObject.getString("nombre_producto");
+                            String descripcion = jsonObject.getString("descripcion");
+                            double precio = jsonObject.getDouble("precio");
+                            String imagenUrl = jsonObject.getString("imageURL");
+                            int id_categoria = jsonObject.has("id_categoria") ? jsonObject.getInt("id_categoria") : 0;
+
+                            // Filtrar por categoría si corresponde
+                            if (categoriaId == 0 || id_categoria == categoriaId) {
+                                Producto producto = new Producto(id_producto, nombre_producto, descripcion, precio, imagenUrl, id_categoria);
+                                productList.add(producto);  // Añadir a la lista
+                            }
+                        }
+
+                        // Notificar al adaptador que los datos han cambiado
+                        adapter.notifyDataSetChanged();
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Log.e(TAG, "Error al parsear el JSON: " + e.getMessage());
+                    }
+                }, error -> {
+                    Log.e(TAG, "Error en la solicitud: " + error.getMessage());
+                }
+        );
+
+        // Añadir la solicitud a la cola
+        Volley.newRequestQueue(requireContext()).add(stringRequest);
     }
 
-    private void replaceFragment(Fragment newFragment) {
-        FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.fragment_container_view, newFragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
+    // Método para agregar productos al carrito
+    private void agregarProductoAlCarrito(int idProducto) {
+        String url = "https://backmobile1.onrender.com/appCART/agregar/" + idProducto + "/";
+
+        SessionManager sessionManager = new SessionManager(getContext());
+        String token = sessionManager.getToken();
+        Log.d("AuthToken", "Token usado en la solicitud: " + token);
+
+        if (token != null) {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                    response -> {
+                        // Maneja la respuesta aquí
+                        Log.d(TAG, "Producto agregado al carrito: " + response);
+                        android.widget.Toast.makeText(getContext(), "Producto agregado al carrito", android.widget.Toast.LENGTH_SHORT).show();
+                    },
+                    error -> {
+                        // Maneja el error aquí
+                        Log.e(TAG, "Error al agregar al carrito: " + error.getMessage());
+                        if (error.networkResponse != null) {
+                            Log.e(TAG, "Código de respuesta: " + error.networkResponse.statusCode);
+                        }
+                        android.widget.Toast.makeText(getContext(), "Error al agregar producto al carrito", android.widget.Toast.LENGTH_SHORT).show();
+                    }) {
+                @Override
+                public java.util.Map<String, String> getHeaders() {
+                    java.util.Map<String, String> headers = new java.util.HashMap<>();
+                    headers.put("Authorization", "Bearer " + token);
+                    return headers;
+                }
+
+                @Override
+                protected java.util.Map<String, String> getParams() {
+                    java.util.Map<String, String> params = new java.util.HashMap<>();
+                    params.put("direccion", "casa"); // Dirección hardcodeada
+                    params.put("cantidad", "1"); // Cantidad fija
+                    return params;
+                }
+            };
+
+            // Añadir la solicitud a la cola
+            Volley.newRequestQueue(getContext()).add(stringRequest);
+        } else {
+            // Maneja el caso en que no hay token
+            android.widget.Toast.makeText(getContext(), "Debes iniciar sesión para agregar productos al carrito", android.widget.Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

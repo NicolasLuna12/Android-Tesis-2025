@@ -186,4 +186,23 @@ public class MainActivity extends AppCompatActivity {
             Log.e("MainActivity", "Error en actualizarTodasLasImagenes: " + e.getMessage());
         }
     }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // Manejo del deep link foodapp://success
+        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+            String scheme = intent.getData().getScheme();
+            String host = intent.getData().getHost();
+            if ("foodapp".equals(scheme) && "success".equals(host)) {
+                // Redirigir directamente al fragmento de éxito
+                getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container_view, new SuccessFragment())
+                    .addToBackStack(null)
+                    .commit();
+            }
+        }
+    }
 }

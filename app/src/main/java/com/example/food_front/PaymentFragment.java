@@ -295,16 +295,13 @@ public class PaymentFragment extends Fragment implements ConnectionMonitor.Conne
                 currentPaymentRequestId = preference.getPaymentRequestId();
                 // Guardar la URL de pago en SessionManager
                 sessionManager.saveLastInitPoint(preference.getInitPoint());
-                // Mostrar el WebView y cargar la URL de pago
+                // Mostrar el WebView y cargar la URL de pago en la app
                 requireActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // Informar al usuario que se está redirigiendo a MercadoPago
                         Toast.makeText(requireContext(), "Redirigiendo a MercadoPago...", Toast.LENGTH_SHORT).show();
-                        // Abrir la app de MercadoPago o navegador externo
                         Intent intent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(preference.getInitPoint()));
                         startActivity(intent);
-                        // Si quieres ocultar el WebView, puedes dejarlo oculto:
                         showWebView(false);
                     }
                 });
