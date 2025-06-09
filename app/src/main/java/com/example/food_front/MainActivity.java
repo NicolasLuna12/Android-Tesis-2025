@@ -24,10 +24,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());        // Initialize SessionManager and ProfileManager
+        super.onCreate(savedInstanceState);        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        
+        // Initialize SessionManager and ProfileManager
         sessionManager = new SessionManager(this);
         profileManager = new ProfileManager(this);
 
