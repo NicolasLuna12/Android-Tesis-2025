@@ -168,12 +168,11 @@ public class SuccessFragment extends Fragment {
         // Agregar el ticket al contenedor del layout XML
         FrameLayout ticketContainer = view.findViewById(R.id.ticket_container);
         ticketContainer.removeAllViews();
-        ticketContainer.addView(ticketLayout);
-        // Personalizar mensaje seg�n el m�todo de pago
+        ticketContainer.addView(ticketLayout);        // Personalizar mensaje seg�n el m�todo de pago
         if (paymentMethod != null && paymentMethod.equalsIgnoreCase("mercadopago")) {
-            textMessage.setText("Compra Finalizada con �xito!\n\nTu pago con MercadoPago ha sido procesado correctamente.");
+            textMessage.setText("Compra Finalizada con exito!\n\nTu pago con MercadoPago ha sido procesado correctamente.");
         } else {
-            textMessage.setText("Compra Finalizada con �xito!");
+            textMessage.setText("Compra Finalizada con exito!");
         }
         // Limpiar carrito en memoria (opcional)
         SessionManager sessionManager = new SessionManager(requireContext());
