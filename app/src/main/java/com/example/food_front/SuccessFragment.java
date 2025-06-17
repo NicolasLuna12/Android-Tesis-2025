@@ -80,20 +80,20 @@ public class SuccessFragment extends Fragment {
         tvTitulo.setTypeface(null, android.graphics.Typeface.BOLD);
         ticketLayout.addView(tvTitulo);
         // Fecha
-        String fecha = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date());
+        final String fecha = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date());
         android.widget.TextView tvFecha = new android.widget.TextView(requireContext());
         tvFecha.setText("Fecha: " + fecha);
         tvFecha.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvFecha);
         // Número de pedido simulado
-        int nroPedido = (int) (Math.random() * 90000 + 10000);
+        final int nroPedido = (int) (Math.random() * 90000 + 10000);
         android.widget.TextView tvNro = new android.widget.TextView(requireContext());
         tvNro.setText("N° Pedido: " + nroPedido);
         tvNro.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvNro);
         // Método de pago
         android.widget.TextView tvPago = new android.widget.TextView(requireContext());
-        String metodo;
+        final String metodo;
         if (paymentMethod != null) {
             String paymentMethodLower = paymentMethod.toLowerCase();
             if (paymentMethodLower.contains("mercado") || paymentMethodLower.equals("mercadopago")) {
@@ -113,16 +113,39 @@ public class SuccessFragment extends Fragment {
         tvPago.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvPago);
 
-        // Generar envío random entre 2000 y 4000 (como en datos de entrega)
-        int envioInt = 2000 + (int)(Math.random() * 2001);
-        String envio = String.valueOf(envioInt);
+        // Obtener el costo de envío guardado desde DatosEntregaFragment
+        final String envio = obtenerCostoEnvio();
 
-        // Guardar estos valores para usarlos luego en el ticket ampliado
-        guardarSubtotalYEnvio(requireContext(), "0.00", envio); // Subtotal se actualizará con el real cuando lleguen los datos
+        // Obtener el subtotal directamente del carrito que se guardó en la sesión
+        final String subtotalCarrito = obtenerSubtotal(requireContext());
+        final double subtotalDouble = Double.parseDouble(subtotalCarrito);
+        final double envioDouble = Double.parseDouble(envio);
+        final double totalDouble = subtotalDouble + envioDouble;
+        final String totalStr = String.format("%.2f", totalDouble);
 
-        // Crear TextView para el total (se actualizará cuando lleguen los datos reales)
+        // TextView para el subtotal - Desde el carrito
+        android.widget.TextView tvSubtotal = new android.widget.TextView(requireContext());
+        tvSubtotal.setText("Subtotal: $ " + subtotalCarrito);
+        tvSubtotal.setTextSize(15);
+        tvSubtotal.setTextColor(android.graphics.Color.DKGRAY);
+        tvSubtotal.setPadding(0, 8, 0, 4);
+        ticketLayout.addView(tvSubtotal);
+
+        // TextView para el envío
+        android.widget.TextView tvEnvio = new android.widget.TextView(requireContext());
+        tvEnvio.setText("Envío: $ " + envio);
+        tvEnvio.setTextSize(15);
+        tvEnvio.setTextColor(android.graphics.Color.DKGRAY);
+        tvEnvio.setPadding(0, 4, 0, 4);
+        ticketLayout.addView(tvEnvio);
+
+        // Crear TextView para el total (sumando subtotal del carrito + envío)
         android.widget.TextView tvTotal = new android.widget.TextView(requireContext());
-        tvTotal.setTextColor(android.graphics.Color.DKGRAY);
+        tvTotal.setText("Total: $ " + totalStr);
+        tvTotal.setTextSize(16);
+        tvTotal.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvTotal.setTextColor(android.graphics.Color.BLACK);
+        tvTotal.setPadding(0, 8, 0, 8);
         ticketLayout.addView(tvTotal);
 
         // Separador visual
@@ -197,14 +220,15 @@ public class SuccessFragment extends Fragment {
                             }
                         }
 
-                        String productos = productosBuilder.toString().trim();
-                        String subtotal = String.format("%.2f", subtotalDouble);
+                        final String productos = productosBuilder.toString().trim();
+                        final String subtotal = String.format("%.2f", subtotalDouble);
 
                         // Calcular total (subtotal + envío)
-                        double totalDouble = subtotalDouble + envioInt;
-                        String total = String.format("%.2f", totalDouble);
+                        double totalDouble = subtotalDouble + Double.parseDouble(envio);
+                        final String total = String.format("%.2f", totalDouble);
 
-                        // Actualizar el total en el ticket resumen
+                        // Actualizar el subtotal y total en el ticket resumen
+                        tvSubtotal.setText("Subtotal: $ " + subtotal);
                         tvTotal.setText("Total: $ " + total);
 
                         // Guardar estos valores para usarlos en el ticket ampliado
@@ -245,15 +269,15 @@ public class SuccessFragment extends Fragment {
     }
 
     private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
-        String productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
+        final String productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
 
         // Calcular un subtotal ficticio para los productos hardcodeados
         double subtotalDouble = 3000.0; // Valor arbitrario para productos hardcodeados
-        String subtotal = String.format("%.2f", subtotalDouble);
+        final String subtotal = String.format("%.2f", subtotalDouble);
 
         // Calcular total (subtotal + envío)
         double totalDouble = subtotalDouble + Double.parseDouble(envio);
-        String total = String.format("%.2f", totalDouble);
+        final String total = String.format("%.2f", totalDouble);
 
         ticketLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -284,5 +308,18 @@ public class SuccessFragment extends Fragment {
     public static String obtenerEnvio(android.content.Context ctx) {
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
         return prefs.getString("envio", "0.00");
+    }
+
+    // Método para obtener el costo de envío
+    private String obtenerCostoEnvio() {
+        String envio;
+        try {
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+            envio = prefs.getString("envio", "0.00");
+        } catch (Exception e) {
+            Log.e(TAG, "Error al obtener costo de envío: " + e.getMessage());
+            envio = "0.00";
+        }
+        return envio;
     }
 }

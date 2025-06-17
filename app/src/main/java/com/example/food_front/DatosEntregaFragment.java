@@ -75,6 +75,10 @@ public class DatosEntregaFragment extends Fragment {
         tvTiempo.setText(minTiempo + " - " + maxTiempo + " min");
         tvCosto.setText("$" + costoEnvio);
 
+        // Guardar el costo de envío para usarlo en el ticket
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        prefs.edit().putString("envio", String.valueOf(costoEnvio)).apply();
+
         // Find the button and set the click listener
         Button button = view.findViewById(R.id.btnHacerPedido);
         button.setOnClickListener(new View.OnClickListener() {

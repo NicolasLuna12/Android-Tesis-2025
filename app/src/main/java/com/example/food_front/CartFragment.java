@@ -284,6 +284,10 @@ public class CartFragment extends Fragment {
             Toast.makeText(getContext(), "Debes iniciar sesión para agregar productos al carrito", Toast.LENGTH_SHORT).show();
         }
     }    private void rediretToCheckout() {
+        // Guardar el subtotal en SharedPreferences para que esté disponible en SuccessFragment
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        prefs.edit().putString("subtotal", String.valueOf(precioTotal)).apply();
+
         FragmentManager fragmentManager = requireActivity().getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         // Crear una nueva instancia de DatosEntregaFragment y pasarle el total de la compra
