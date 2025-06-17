@@ -329,12 +329,10 @@ public class HomeFragment extends Fragment {
                     java.util.Map<String, String> headers = new java.util.HashMap<>();
                     headers.put("Authorization", "Bearer " + token);
                     return headers;
-                }
-
-                @Override
+                }                @Override
                 protected java.util.Map<String, String> getParams() {
                     java.util.Map<String, String> params = new java.util.HashMap<>();
-                    params.put("direccion", "casa"); // Dirección hardcodeada
+                    params.put("direccion", ""); // Dirección vacía
                     params.put("cantidad", "1"); // Cantidad fija
                     return params;
                 }

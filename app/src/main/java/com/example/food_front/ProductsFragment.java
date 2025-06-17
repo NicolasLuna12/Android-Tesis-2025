@@ -144,12 +144,10 @@ public class ProductsFragment extends Fragment {
                     headers.put("Authorization", "Bearer " + token); // Usa el token almacenado
                     Log.d("HeadersDebug", "Headers: " + headers); // Verificar que se envíen los headers
                     return headers;
-                }
-
-                @Override
+                }                @Override
                 protected Map<String, String> getParams() {
                     Map<String, String> params = new HashMap<>();
-                    params.put("direccion", "casa"); // Dirección hardcodeada
+                    params.put("direccion", ""); // Dirección vacía
                     params.put("cantidad", "1"); // Cantidad fija
                     Log.d("ParamsDebug", "Params: " + params); // Verificar que se envíen los parámetros
                     return params;
