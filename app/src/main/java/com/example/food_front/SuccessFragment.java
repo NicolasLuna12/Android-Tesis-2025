@@ -135,7 +135,7 @@ public class SuccessFragment extends Fragment {
 
         // TextView para el env�o
         android.widget.TextView tvEnvio = new android.widget.TextView(requireContext());
-        tvEnvio.setText("Env�o: $ " + envio);
+        tvEnvio.setText("Envio: $ " + envio);
         tvEnvio.setTextSize(15);
         tvEnvio.setTextColor(android.graphics.Color.DKGRAY);
         tvEnvio.setPadding(0, 4, 0, 4);
@@ -514,7 +514,7 @@ public class SuccessFragment extends Fragment {
                     if (text != null && text.contains("Subtotal")) {
                         tvSubtotal = tv;
                         tvSubtotal.setTag("subtotal_view");
-                    } else if (text != null && text.contains("Total") && !text.contains("Subtotal") && !text.contains("Env�o")) {
+                    } else if (text != null && text.contains("Total") && !text.contains("Subtotal") && !text.contains("Envio")) {
                         tvTotal = tv;
                         tvTotal.setTag("total_view");
                     }
