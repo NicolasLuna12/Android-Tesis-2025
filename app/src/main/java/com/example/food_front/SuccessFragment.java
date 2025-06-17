@@ -121,14 +121,14 @@ public class SuccessFragment extends Fragment {
         final double subtotalDouble = Double.parseDouble(subtotalCarrito);
         final double envioDouble = Double.parseDouble(envio);
         final double totalDouble = subtotalDouble + envioDouble;
-        final String totalStr = String.format("%.2f", totalDouble);
-
-        // TextView para el subtotal - Desde el carrito
+        final String totalStr = String.format("%.2f", totalDouble);        // TextView para el subtotal - Desde el carrito
         android.widget.TextView tvSubtotal = new android.widget.TextView(requireContext());
+        tvSubtotal.setId(android.view.View.generateViewId()); // Asignar un ID único para poder referenciarlo después
         tvSubtotal.setText("Subtotal: $ " + subtotalCarrito);
         tvSubtotal.setTextSize(15);
         tvSubtotal.setTextColor(android.graphics.Color.DKGRAY);
         tvSubtotal.setPadding(0, 8, 0, 4);
+        tvSubtotal.setTag("subtotal_view"); // Tag para identificar esta vista específicamente
         ticketLayout.addView(tvSubtotal);
 
         // TextView para el envío
@@ -137,15 +137,18 @@ public class SuccessFragment extends Fragment {
         tvEnvio.setTextSize(15);
         tvEnvio.setTextColor(android.graphics.Color.DKGRAY);
         tvEnvio.setPadding(0, 4, 0, 4);
-        ticketLayout.addView(tvEnvio);
-
+        tvEnvio.setTag("envio_view"); // Tag para identificar esta vista específicamente
+        ticketLayout.addView(tvEnvio);        
+        
         // Crear TextView para el total (sumando subtotal del carrito + envío)
         android.widget.TextView tvTotal = new android.widget.TextView(requireContext());
+        tvTotal.setId(android.view.View.generateViewId()); // Asignar un ID único para poder referenciarlo después
         tvTotal.setText("Total: $ " + totalStr);
         tvTotal.setTextSize(16);
         tvTotal.setTypeface(null, android.graphics.Typeface.BOLD);
         tvTotal.setTextColor(android.graphics.Color.BLACK);
         tvTotal.setPadding(0, 8, 0, 8);
+        tvTotal.setTag("total_view"); // Tag para identificar esta vista específicamente
         ticketLayout.addView(tvTotal);
 
         // Separador visual
@@ -192,10 +195,12 @@ public class SuccessFragment extends Fragment {
                     Toast.makeText(requireContext(), "Error al volver a inicio. Intente nuevamente.", Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        });        // Guardar los valores actuales antes de buscar los productos reales
+        guardarSubtotalYEnvio(requireContext(), subtotalCarrito, envio);
 
         // Obtener productos reales del último pedido
         String token = sessionManager.getToken();
+        Log.d(TAG, "Obteniendo último pedido con token: " + (token != null ? "disponible" : "no disponible"));
         DashboardHelper.getUltimoPedido(requireContext(), token, new DashboardHelper.DashboardCallback() {
             @Override
             public void onSuccess(org.json.JSONArray pedidos) {
@@ -221,31 +226,59 @@ public class SuccessFragment extends Fragment {
                         }
 
                         final String productos = productosBuilder.toString().trim();
-                        final String subtotal = String.format("%.2f", subtotalDouble);
-
+                        
+                        // Si no hay productos, usamos el subtotal guardado anteriormente
+                        final String subtotal;
+                        if (subtotalDouble <= 0) {
+                            subtotal = obtenerSubtotal(requireContext());
+                            Log.d(TAG, "Usando subtotal guardado porque no hay productos en el último pedido: " + subtotal);
+                        } else {
+                            subtotal = String.format("%.2f", subtotalDouble);
+                            Log.d(TAG, "Usando subtotal calculado de los productos: " + subtotal);
+                        }
+                        
                         // Calcular total (subtotal + envío)
-                        double totalDouble = subtotalDouble + Double.parseDouble(envio);
+                        double totalDouble = Double.parseDouble(subtotal) + Double.parseDouble(envio);
                         final String total = String.format("%.2f", totalDouble);
-
-                        // Actualizar el subtotal y total en el ticket resumen
-                        tvSubtotal.setText("Subtotal: $ " + subtotal);
-                        tvTotal.setText("Total: $ " + total);
-
+                        
                         // Guardar estos valores para usarlos en el ticket ampliado
                         guardarSubtotalYEnvio(requireContext(), subtotal, envio);
-
-                        // Hacer el ticket ampliable al click con productos reales
+                          // Actualizar el subtotal y total en el ticket resumen usando nuestro método dedicado
+                        requireActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Solo fijamos los valores una vez para evitar duplicación
+                                fijarValoresTicket((ViewGroup)ticketLayout, subtotal, envio, total);
+                                
+                                // En lugar de un segundo llamado, solo invalidamos la vista
+                                ticketLayout.invalidate();
+                                ticketLayout.requestLayout();
+                            }
+                        });                        // Hacer el ticket ampliable al click con productos reales
+                        final String productosFinales = productos; // Guardamos en variable final para el onClick
                         ticketLayout.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
+                                // Obtener valores actuales directamente de SharedPreferences
+                                // para mayor consistencia
+                                String subtotalActual = obtenerSubtotal(requireContext());
+                                String envioActual = envio; // Usar el envío pasado como parámetro
+                                
+                                // Calcular total actual
+                                double subtotalDouble = Double.parseDouble(subtotalActual);
+                                double envioDouble = Double.parseDouble(envioActual);
+                                String totalActual = String.format("%.2f", subtotalDouble + envioDouble);
+                                
+                                Log.d(TAG, "onClick ticket (API): Usando valores - Subtotal: " + subtotalActual + ", Envío: " + envioActual + ", Total: " + totalActual);
+                                
                                 TicketDetailDialogFragment dialog = TicketDetailDialogFragment.newInstance(
                                         fecha,
                                         String.valueOf(nroPedido),
                                         metodo,
-                                        productos,
-                                        subtotal,
+                                        productosFinales,
+                                        subtotalActual,
                                         envio,
-                                        total
+                                        totalActual
                                 );
                                 dialog.show(getParentFragmentManager(), "TicketDetailDialog");
                             }
@@ -266,48 +299,107 @@ public class SuccessFragment extends Fragment {
             }
         });
         return view;
-    }
-
-    private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
-        final String productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
-
-        // Calcular un subtotal ficticio para los productos hardcodeados
-        double subtotalDouble = 3000.0; // Valor arbitrario para productos hardcodeados
+    }    private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
+        // Intentar obtener un carrito existente de la sesión
+        String productos = "";
+        double subtotalDouble = 0.0;
+        boolean hayProductosEnCarrito = false;
+        
+        try {
+            SessionManager sessionManager = new SessionManager(requireContext());
+            String carritoJson = sessionManager.getCarrito();
+            if (carritoJson != null && !carritoJson.isEmpty()) {
+                org.json.JSONArray carrito = new org.json.JSONArray(carritoJson);
+                StringBuilder productosBuilder = new StringBuilder();
+                
+                for (int i = 0; i < carrito.length(); i++) {
+                    org.json.JSONObject producto = carrito.getJSONObject(i);
+                    String nombre = producto.optString("name", "Producto");
+                    int cantidad = producto.optInt("quantity", 1);
+                    double precio = producto.optDouble("price", 0);
+                    
+                    productosBuilder.append("- ").append(nombre).append(" x").append(cantidad).append("\n");
+                    subtotalDouble += precio * cantidad;
+                    hayProductosEnCarrito = true;
+                }
+                
+                if (hayProductosEnCarrito) {
+                    productos = productosBuilder.toString().trim();
+                    Log.d(TAG, "Usando productos del carrito para el ticket: " + productos);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error al obtener productos del carrito: " + e.getMessage());
+        }
+        
+        // Si no hay productos en el carrito, usar valores por defecto
+        if (!hayProductosEnCarrito || subtotalDouble <= 0) {
+            productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
+            subtotalDouble = 3000.0; // Valor arbitrario para productos hardcodeados
+            Log.d(TAG, "Usando productos por defecto para el ticket");
+        }
+        
+        final String productosFinales = productos;
         final String subtotal = String.format("%.2f", subtotalDouble);
 
         // Calcular total (subtotal + envío)
         double totalDouble = subtotalDouble + Double.parseDouble(envio);
         final String total = String.format("%.2f", totalDouble);
-
-        ticketLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
+          // Guardar estos valores en SharedPreferences inmediatamente
+        guardarSubtotalYEnvio(requireContext(), subtotal, envio);
+        
+        // Actualizar el subtotal y total en el ticket usando nuestro método dedicado (una sola vez)
+        fijarValoresTicket((ViewGroup)ticketLayout, subtotal, envio, total);        ticketLayout.setOnClickListener(new View.OnClickListener() {            @Override
             public void onClick(View v) {
+                // Obtener valores actuales directamente de SharedPreferences
+                String subtotalActual = obtenerSubtotal(requireContext());
+                String envioActual = obtenerEnvio(requireContext());
+                
+                // Calcular total actual
+                double subtotalDouble = Double.parseDouble(subtotalActual);
+                double envioDouble = Double.parseDouble(envioActual);
+                String totalActual = String.format("%.2f", subtotalDouble + envioDouble);
+                
+                Log.d(TAG, "onClick ticket (default): Usando valores - Subtotal: " + subtotalActual + ", Envío: " + envioActual + ", Total: " + totalActual);
+                
+                // Pasar los valores actuales al diálogo
                 TicketDetailDialogFragment dialog = TicketDetailDialogFragment.newInstance(
                         fecha,
                         String.valueOf(nroPedido),
                         metodo,
-                        productos,
-                        subtotal,
+                        productosFinales, // Usar los productos obtenidos del carrito
+                        subtotalActual,  // Usar el valor actualizado
                         envio,
-                        total
+                        totalActual      // Usar el valor actualizado
                 );
                 dialog.show(getParentFragmentManager(), "TicketDetailDialog");
             }
         });
     }
 
-    // --- UTILIDADES PARA SUBTOTAL Y ENVIO ---
+    // --- UTILIDADES PARA SUBTOTAL Y ENVIO --- 
     public static void guardarSubtotalYEnvio(android.content.Context ctx, String subtotal, String envio) {
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
-        prefs.edit().putString("subtotal", subtotal).putString("envio", envio).apply();
+        android.content.SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("subtotal", subtotal);
+        editor.putString("envio", envio);
+        editor.commit(); // Usando commit en lugar de apply para asegurar escritura inmediata
+        
+        // Agregar log para verificar que se guardaron correctamente
+        android.util.Log.d("SuccessFragment", "Guardando en SharedPreferences - Subtotal: " + subtotal + ", Envío: " + envio);
     }
+    
     public static String obtenerSubtotal(android.content.Context ctx) {
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
-        return prefs.getString("subtotal", "0.00");
+        String subtotal = prefs.getString("subtotal", "0.00");
+        android.util.Log.d("SuccessFragment", "Obteniendo subtotal desde SharedPreferences: " + subtotal);
+        return subtotal;
     }
     public static String obtenerEnvio(android.content.Context ctx) {
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
-        return prefs.getString("envio", "0.00");
+        String envio = prefs.getString("envio", "0.00");
+        android.util.Log.d("SuccessFragment", "Obteniendo envío desde SharedPreferences: " + envio);
+        return envio;
     }
 
     // Método para obtener el costo de envío
@@ -321,5 +413,77 @@ public class SuccessFragment extends Fragment {
             envio = "0.00";
         }
         return envio;
+    }    @Override
+    public void onResume() {
+        super.onResume();
+        // Al resumir, solo registramos que estamos de vuelta pero NO actualizamos
+        // los valores para evitar la duplicación
+        Log.d(TAG, "onResume: Fragmento resumido");
+    }/**
+     * Método completamente rediseñado para evitar la duplicación del subtotal y total
+     * Este método crea TextViews nuevos para mostrar los valores en lugar de actualizar los existentes
+     */
+    private void fijarValoresTicket(ViewGroup ticketLayout, String subtotal, String envio, String total) {
+        Log.d(TAG, "Método fijarValoresTicket llamado con subtotal=" + subtotal + ", envio=" + envio + ", total=" + total);
+        
+        // Buscar los TextViews por sus tags específicos
+        TextView tvSubtotal = null;
+        TextView tvTotal = null;
+        
+        // Primero intentamos encontrar los TextViews que ya existen
+        for (int i = 0; i < ticketLayout.getChildCount(); i++) {
+            View child = ticketLayout.getChildAt(i);
+            if (child instanceof TextView) {
+                Object tag = child.getTag();
+                if (tag != null) {
+                    if (tag.equals("subtotal_view")) {
+                        tvSubtotal = (TextView) child;
+                    } else if (tag.equals("total_view")) {
+                        tvTotal = (TextView) child;
+                    }
+                }
+            }
+        }
+        
+        // Si no encontramos los TextViews, los buscamos por su texto
+        if (tvSubtotal == null || tvTotal == null) {
+            for (int i = 0; i < ticketLayout.getChildCount(); i++) {
+                View child = ticketLayout.getChildAt(i);
+                if (child instanceof TextView) {
+                    TextView tv = (TextView) child;
+                    String text = tv.getText().toString();
+                    if (text.contains("Subtotal")) {
+                        tvSubtotal = tv;
+                        tvSubtotal.setTag("subtotal_view");
+                    } else if (text.contains("Total") && !text.contains("Subtotal") && !text.contains("Envío")) {
+                        tvTotal = tv;
+                        tvTotal.setTag("total_view");
+                    }
+                }
+            }
+        }
+        
+        // Actualizar los valores solo si encontramos las vistas
+        if (tvSubtotal != null) {
+            tvSubtotal.setText("Subtotal: $ " + subtotal);
+        }
+        
+        if (tvTotal != null) {
+            tvTotal.setText("Total: $ " + total);
+        }
+        
+        // Guardar estos valores en SharedPreferences inmediatamente
+        guardarSubtotalYEnvio(ticketLayout.getContext(), subtotal, envio);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Asegurar que los valores se guarden antes de que el fragmento se destruya
+        if (getContext() != null) {
+            String subtotal = obtenerSubtotal(requireContext());
+            String envio = obtenerEnvio(requireContext());
+            guardarSubtotalYEnvio(requireContext(), subtotal, envio);
+        }
     }
 }

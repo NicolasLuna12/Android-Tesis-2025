@@ -10,6 +10,9 @@ public class SessionManager {
     private static final String KEY_EMAIL = "email";
     private static final String KEY_LAST_INIT_POINT = "last_init_point";
 
+    // Constantes para manejar el carrito
+    private static final String KEY_CARRITO = "carrito";
+
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
 
@@ -56,6 +59,20 @@ public class SessionManager {
     // Obtener la última URL de pago (init_point)
     public String getLastInitPoint() {
         return sharedPreferences.getString(KEY_LAST_INIT_POINT, null);
+    }
+
+    // Guardar el carrito como JSON string
+    public void saveCarrito(String carritoJson) {
+        editor.putString(KEY_CARRITO, carritoJson);
+        editor.apply();
+        Log.d("SessionManager", "Carrito guardado en SharedPreferences");
+    }
+
+    // Obtener el carrito como JSON string
+    public String getCarrito() {
+        String carrito = sharedPreferences.getString(KEY_CARRITO, "[]");
+        Log.d("SessionManager", "Carrito obtenido de SharedPreferences");
+        return carrito;
     }
 
     // Borrar la session
