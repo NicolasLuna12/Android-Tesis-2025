@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -16,15 +17,19 @@ public class TicketDetailDialogFragment extends DialogFragment {
     private String nroPedido;
     private String metodoPago;
     private String total;
+    private String subtotal;
+    private String envio;
 
-    public static TicketDetailDialogFragment newInstance(String fecha, String nroPedido, String metodoPago, String total, String productos) {
+    public static TicketDetailDialogFragment newInstance(String fecha, String nroPedido, String metodoPago, String productos, String subtotal, String envio, String total) {
         TicketDetailDialogFragment fragment = new TicketDetailDialogFragment();
         Bundle args = new Bundle();
         args.putString("fecha", fecha);
         args.putString("nroPedido", nroPedido);
         args.putString("metodoPago", metodoPago);
-        args.putString("total", total);
         args.putString("productos", productos);
+        args.putString("subtotal", subtotal);
+        args.putString("envio", envio);
+        args.putString("total", total);
         fragment.setArguments(args);
         return fragment;
     }
@@ -38,52 +43,26 @@ public class TicketDetailDialogFragment extends DialogFragment {
             fecha = getArguments().getString("fecha", "-");
             nroPedido = getArguments().getString("nroPedido", "-");
             metodoPago = getArguments().getString("metodoPago", "-");
-            total = getArguments().getString("total", "-");
             productos = getArguments().getString("productos", "-");
+            subtotal = getArguments().getString("subtotal", "-");
+            envio = getArguments().getString("envio", "-");
+            total = getArguments().getString("total", "-");
         }
-        LinearLayout layout = new LinearLayout(requireContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(64, 64, 64, 64); // Más grande
-        layout.setBackgroundColor(android.graphics.Color.WHITE);
-        layout.setMinimumWidth(900); // Más ancho
-        layout.setMinimumHeight(900); // Más alto
+        View view = inflater.inflate(R.layout.fragment_ticket_detail, container, false);
 
-        TextView title = new TextView(requireContext());
-        title.setText("Detalles del Ticket");
-        title.setTextSize(24);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setTextColor(android.graphics.Color.BLACK);
-        layout.addView(title);
+        ((TextView) view.findViewById(R.id.tvFecha)).setText("Fecha: " + fecha);
+        ((TextView) view.findViewById(R.id.tvNro)).setText("N° Pedido: " + nroPedido);
+        ((TextView) view.findViewById(R.id.tvPago)).setText("Método de pago: " + metodoPago);
+        ((TextView) view.findViewById(R.id.tvProductos)).setText(productos);
+        // Mostrar subtotal y envío en el ticket extendido
+        ((TextView) view.findViewById(R.id.tvSubtotal)).setText("Subtotal: $" + subtotal);
+        ((TextView) view.findViewById(R.id.tvEnvio)).setText("Envío: $" + envio);
+        ((TextView) view.findViewById(R.id.tvTotal)).setText("Total: $" + total);
 
-        TextView tvFecha = new TextView(requireContext());
-        tvFecha.setText("Fecha: " + fecha);
-        layout.addView(tvFecha);
+        Button btnCerrar = view.findViewById(R.id.btnCerrar);
+        btnCerrar.setOnClickListener(v -> dismiss());
 
-        TextView tvNro = new TextView(requireContext());
-        tvNro.setText("N° Pedido: " + nroPedido);
-        layout.addView(tvNro);
-
-        TextView tvPago = new TextView(requireContext());
-        tvPago.setText("Método de pago: " + metodoPago);
-        layout.addView(tvPago);
-
-        TextView tvTotal = new TextView(requireContext());
-        tvTotal.setText("Total: $ " + total);
-        layout.addView(tvTotal);
-
-        // Productos reales
-        TextView tvProductos = new TextView(requireContext());
-        tvProductos.setText("Productos:\n" + productos);
-        layout.addView(tvProductos);
-
-        TextView tvGracias = new TextView(requireContext());
-        tvGracias.setText("¡Gracias por tu compra!");
-        tvGracias.setTextColor(android.graphics.Color.parseColor("#388E3C"));
-        tvGracias.setTextSize(18);
-        tvGracias.setPadding(0, 24, 0, 0);
-        layout.addView(tvGracias);
-
-        return layout;
+        return view;
     }
 
     @Override

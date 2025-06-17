@@ -112,12 +112,19 @@ public class SuccessFragment extends Fragment {
         tvPago.setText("Pago: " + metodo);
         tvPago.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvPago);
-        // Total (simulado, ya que no hay acceso directo al monto)
+
+        // Generar envío random entre 2000 y 4000 (como en datos de entrega)
+        int envioInt = 2000 + (int)(Math.random() * 2001);
+        String envio = String.valueOf(envioInt);
+
+        // Guardar estos valores para usarlos luego en el ticket ampliado
+        guardarSubtotalYEnvio(requireContext(), "0.00", envio); // Subtotal se actualizará con el real cuando lleguen los datos
+
+        // Crear TextView para el total (se actualizará cuando lleguen los datos reales)
         android.widget.TextView tvTotal = new android.widget.TextView(requireContext());
-        String totalSimulado = String.valueOf((int)(Math.random()*2000+2000));
-        tvTotal.setText("Total: $ " + totalSimulado);
         tvTotal.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvTotal);
+
         // Separador visual
         android.view.View sep = new android.view.View(requireContext());
         sep.setBackgroundColor(android.graphics.Color.LTGRAY);
@@ -163,6 +170,7 @@ public class SuccessFragment extends Fragment {
                 }
             }
         });
+
         // Obtener productos reales del último pedido
         String token = sessionManager.getToken();
         DashboardHelper.getUltimoPedido(requireContext(), token, new DashboardHelper.DashboardCallback() {
@@ -172,16 +180,36 @@ public class SuccessFragment extends Fragment {
                     try {
                         org.json.JSONObject ultimoPedido = pedidos.getJSONObject(0); // El más reciente
                         StringBuilder productosBuilder = new StringBuilder();
+                        double subtotalDouble = 0.0;
+
                         if (ultimoPedido.has("detalles")) {
                             org.json.JSONArray detalles = ultimoPedido.getJSONArray("detalles");
                             for (int i = 0; i < detalles.length(); i++) {
                                 org.json.JSONObject detalle = detalles.getJSONObject(i);
                                 String nombre = detalle.optString("nombre_producto", "Producto");
                                 int cantidad = detalle.optInt("cantidad_productos", 1);
+                                double precio = detalle.optDouble("precio_unitario", 0);
+
                                 productosBuilder.append("- ").append(nombre).append(" x").append(cantidad).append("\n");
+
+                                // Calcular subtotal sumando los productos
+                                subtotalDouble += precio * cantidad;
                             }
                         }
+
                         String productos = productosBuilder.toString().trim();
+                        String subtotal = String.format("%.2f", subtotalDouble);
+
+                        // Calcular total (subtotal + envío)
+                        double totalDouble = subtotalDouble + envioInt;
+                        String total = String.format("%.2f", totalDouble);
+
+                        // Actualizar el total en el ticket resumen
+                        tvTotal.setText("Total: $ " + total);
+
+                        // Guardar estos valores para usarlos en el ticket ampliado
+                        guardarSubtotalYEnvio(requireContext(), subtotal, envio);
+
                         // Hacer el ticket ampliable al click con productos reales
                         ticketLayout.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -190,32 +218,43 @@ public class SuccessFragment extends Fragment {
                                         fecha,
                                         String.valueOf(nroPedido),
                                         metodo,
-                                        totalSimulado,
-                                        productos
+                                        productos,
+                                        subtotal,
+                                        envio,
+                                        total
                                 );
                                 dialog.show(getParentFragmentManager(), "TicketDetailDialog");
                             }
                         });
                     } catch (Exception e) {
                         // Fallback a productos hardcodeados si hay error
-                        setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, totalSimulado);
+                        setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, envio);
                     }
                 } else {
                     // Fallback a productos hardcodeados si no hay pedidos
-                    setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, totalSimulado);
+                    setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, envio);
                 }
             }
             @Override
             public void onError(String error) {
                 // Fallback a productos hardcodeados si hay error
-                setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, totalSimulado);
+                setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, envio);
             }
         });
         return view;
     }
 
-    private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String totalSimulado) {
+    private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
         String productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
+
+        // Calcular un subtotal ficticio para los productos hardcodeados
+        double subtotalDouble = 3000.0; // Valor arbitrario para productos hardcodeados
+        String subtotal = String.format("%.2f", subtotalDouble);
+
+        // Calcular total (subtotal + envío)
+        double totalDouble = subtotalDouble + Double.parseDouble(envio);
+        String total = String.format("%.2f", totalDouble);
+
         ticketLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -223,11 +262,27 @@ public class SuccessFragment extends Fragment {
                         fecha,
                         String.valueOf(nroPedido),
                         metodo,
-                        totalSimulado,
-                        productos
+                        productos,
+                        subtotal,
+                        envio,
+                        total
                 );
                 dialog.show(getParentFragmentManager(), "TicketDetailDialog");
             }
         });
+    }
+
+    // --- UTILIDADES PARA SUBTOTAL Y ENVIO ---
+    public static void guardarSubtotalYEnvio(android.content.Context ctx, String subtotal, String envio) {
+        android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        prefs.edit().putString("subtotal", subtotal).putString("envio", envio).apply();
+    }
+    public static String obtenerSubtotal(android.content.Context ctx) {
+        android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        return prefs.getString("subtotal", "0.00");
+    }
+    public static String obtenerEnvio(android.content.Context ctx) {
+        android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        return prefs.getString("envio", "0.00");
     }
 }
