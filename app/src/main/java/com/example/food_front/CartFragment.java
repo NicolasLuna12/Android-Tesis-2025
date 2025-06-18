@@ -137,6 +137,8 @@ public class CartFragment extends Fragment {
                                     carritoList.add(carrito);  // Añadir a la lista
                                 }
 
+                                // Guardar la lista de productos del carrito en SharedPreferences para el ticket
+                                guardarProductosParaTicket(carritoList);
 
                                 if (carritoList.isEmpty()) {
                                     tvTotal.setVisibility(View.GONE);
@@ -301,5 +303,33 @@ public class CartFragment extends Fragment {
         fragmentTransaction.replace(R.id.fragment_container_view, new EmptyCartFragment());
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
+    }
+
+    /**
+     * Guarda la lista de productos del carrito en SharedPreferences para mostrarlos en el ticket
+     * @param productos Lista de productos en el carrito
+     */
+    private void guardarProductosParaTicket(List<Carrito> productos) {
+        try {
+            // Crear un JSONArray para almacenar los productos
+            JSONArray jsonArray = new JSONArray();
+            
+            for (Carrito item : productos) {
+                JSONObject jsonProduct = new JSONObject();
+                jsonProduct.put("nombre", item.getProducto());
+                jsonProduct.put("cantidad", item.getCantidad());
+                jsonProduct.put("precio", item.getPrecio());
+                jsonProduct.put("imagen", item.getImagenUrl());
+                jsonArray.put(jsonProduct);
+            }
+            
+            // Guardar el JSONArray como string en SharedPreferences
+            String productosJson = jsonArray.toString();
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+            prefs.edit().putString("productos_carrito", productosJson).apply();
+            
+        } catch (JSONException e) {
+            Log.e("CartFragment", "Error al guardar productos para el ticket: " + e.getMessage());
+        }
     }
 }

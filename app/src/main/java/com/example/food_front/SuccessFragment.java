@@ -68,11 +68,31 @@ public class SuccessFragment extends Fragment {
         ViewGroup ticketLayout = new android.widget.LinearLayout(requireContext());
         ((android.widget.LinearLayout) ticketLayout).setOrientation(android.widget.LinearLayout.VERTICAL);
         ticketLayout.setPadding(32, 32, 32, 32);
-        ticketLayout.setBackgroundResource(android.R.color.white);
+        
+        // Crear un fondo con bordes redondeados para el ticket
+        android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
+        shape.setCornerRadius(16f);
+        shape.setColor(android.graphics.Color.WHITE);
+        shape.setStroke(1, android.graphics.Color.LTGRAY);
+        ticketLayout.setBackground(shape);
+        
         ticketLayout.setElevation(8f);
         ticketLayout.setClickable(true);
         ticketLayout.setFocusable(true);
         ticketLayout.setForeground(requireContext().getDrawable(android.R.drawable.list_selector_background));
+        
+        // Imagen de confirmación en la parte superior del ticket
+        android.widget.ImageView checkImage = new android.widget.ImageView(requireContext());
+        checkImage.setImageResource(android.R.drawable.ic_menu_send);
+        checkImage.setColorFilter(android.graphics.Color.parseColor("#388E3C"));
+        android.widget.LinearLayout.LayoutParams imageParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        imageParams.gravity = android.view.Gravity.CENTER;
+        imageParams.bottomMargin = 16;
+        checkImage.setLayoutParams(imageParams);
+        ticketLayout.addView(checkImage);
+        
         android.widget.TextView tvTitulo = new android.widget.TextView(requireContext());
         tvTitulo.setText("Ticket de compra");
         tvTitulo.setTextSize(18);
@@ -113,45 +133,32 @@ public class SuccessFragment extends Fragment {
         tvPago.setTextColor(android.graphics.Color.DKGRAY);
         ticketLayout.addView(tvPago);
 
-        // Obtener el costo de env�o guardado desde DatosEntregaFragment
-        final String envio = obtenerCostoEnvio();
+        // Agregar separador antes de lista de productos
+        android.view.View separadorSuperior = new android.view.View(requireContext());
+        separadorSuperior.setBackgroundColor(android.graphics.Color.LTGRAY);
+        separadorSuperior.setLayoutParams(new android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1));
+        ticketLayout.addView(separadorSuperior);
 
-        // Obtener el subtotal directamente del carrito que se guard� en la sesi�n
+        // Título para la sección de productos
+        android.widget.TextView tvProductosTitle = new android.widget.TextView(requireContext());
+        tvProductosTitle.setText("Productos:");
+        tvProductosTitle.setTextSize(15);
+        tvProductosTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvProductosTitle.setPadding(0, 12, 0, 8);
+        ticketLayout.addView(tvProductosTitle);        // Mostrar los productos del carrito
+        mostrarProductosEnTicket(ticketLayout);
+          // Obtener el costo de envío guardado desde DatosEntregaFragment
+        final String envio = obtenerEnvio(requireContext());
+
+        // Obtener el subtotal directamente de las preferencias
         final String subtotalCarrito = obtenerSubtotal(requireContext());
         final double subtotalDouble = Double.parseDouble(subtotalCarrito);
         final double envioDouble = Double.parseDouble(envio);
         final double totalDouble = subtotalDouble + envioDouble;
-        final String totalStr = formatearValorMonetario(String.valueOf(totalDouble));
+        final String totalStr = formatearValorMonetarioStatic(String.valueOf(totalDouble));
         
-        // TextView para el subtotal - Desde el carrito
-        android.widget.TextView tvSubtotal = new android.widget.TextView(requireContext());
-        tvSubtotal.setId(android.view.View.generateViewId()); // Asignar un ID �nico para poder referenciarlo despu�s
-        tvSubtotal.setText("Subtotal: $ " + subtotalCarrito);
-        tvSubtotal.setTextSize(15);
-        tvSubtotal.setTextColor(android.graphics.Color.DKGRAY);
-        tvSubtotal.setPadding(0, 8, 0, 4);
-        tvSubtotal.setTag("subtotal_view"); // Tag para identificar esta vista espec�ficamente
-        ticketLayout.addView(tvSubtotal);
-
-        // TextView para el env�o
-        android.widget.TextView tvEnvio = new android.widget.TextView(requireContext());
-        tvEnvio.setText("Envio: $ " + envio);
-        tvEnvio.setTextSize(15);
-        tvEnvio.setTextColor(android.graphics.Color.DKGRAY);
-        tvEnvio.setPadding(0, 4, 0, 4);
-        tvEnvio.setTag("envio_view"); // Tag para identificar esta vista espec�ficamente
-        ticketLayout.addView(tvEnvio);        
-        
-        // Crear TextView para el total (sumando subtotal del carrito + env�o)
-        android.widget.TextView tvTotal = new android.widget.TextView(requireContext());
-        tvTotal.setId(android.view.View.generateViewId()); // Asignar un ID �nico para poder referenciarlo despu�s
-        tvTotal.setText("Total: $ " + totalStr);
-        tvTotal.setTextSize(16);
-        tvTotal.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvTotal.setTextColor(android.graphics.Color.BLACK);
-        tvTotal.setPadding(0, 8, 0, 8);
-        tvTotal.setTag("total_view"); // Tag para identificar esta vista espec�ficamente
-        ticketLayout.addView(tvTotal);
+        // Usar nuestro método centralizado para fijar los valores de subtotal, envío y total
+        fijarValoresTicket(ticketLayout, subtotalCarrito, envio, totalStr);
 
         // Separador visual
         android.view.View sep = new android.view.View(requireContext());
@@ -168,7 +175,9 @@ public class SuccessFragment extends Fragment {
         // Agregar el ticket al contenedor del layout XML
         FrameLayout ticketContainer = view.findViewById(R.id.ticket_container);
         ticketContainer.removeAllViews();
-        ticketContainer.addView(ticketLayout);        // Personalizar mensaje seg�n el m�todo de pago
+        ticketContainer.addView(ticketLayout);
+        
+        // Personalizar mensaje según el método de pago
         if (paymentMethod != null && paymentMethod.equalsIgnoreCase("mercadopago")) {
             textMessage.setText("Compra Finalizada con exito!\n\nTu pago con MercadoPago ha sido procesado correctamente.");
         } else {
@@ -310,28 +319,28 @@ public class SuccessFragment extends Fragment {
         });
         return view;
     }
-    
-    private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
-        // Intentar obtener un carrito existente de la sesi�n
+      private void setTicketClickDefault(View ticketLayout, String fecha, int nroPedido, String metodo, String envio) {
+        // Obtener productos del carrito desde SharedPreferences (guardados por CartFragment)
         String productos = "";
         double subtotalDouble = 0.0;
         boolean hayProductosEnCarrito = false;
         
         try {
-            SessionManager sessionManager = new SessionManager(requireContext());
-            String carritoJson = sessionManager.getCarrito();
+            // Obtener el JSON de productos guardado en SharedPreferences
+            android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+            String productosJson = prefs.getString("productos_carrito", "");
             
-            Log.d(TAG, "Contenido del carrito en JSON: " + carritoJson);
+            Log.d(TAG, "Contenido de productos en SharedPreferences: " + productosJson);
             
-            if (carritoJson != null && !carritoJson.isEmpty() && !carritoJson.equals("[]")) {
-                org.json.JSONArray carrito = new org.json.JSONArray(carritoJson);
+            if (productosJson != null && !productosJson.isEmpty()) {
+                org.json.JSONArray productosArray = new org.json.JSONArray(productosJson);
                 StringBuilder productosBuilder = new StringBuilder();
                 
-                for (int i = 0; i < carrito.length(); i++) {
-                    org.json.JSONObject producto = carrito.getJSONObject(i);
-                    String nombre = producto.optString("name", "Producto");
-                    int cantidad = producto.optInt("quantity", 1);
-                    double precio = producto.optDouble("price", 0);
+                for (int i = 0; i < productosArray.length(); i++) {
+                    org.json.JSONObject producto = productosArray.getJSONObject(i);
+                    String nombre = producto.optString("nombre", "Producto");
+                    int cantidad = producto.optInt("cantidad", 1);
+                    double precio = producto.optDouble("precio", 0);
                     
                     productosBuilder.append("- ").append(nombre).append(" x").append(cantidad).append("\n");
                     subtotalDouble += precio * cantidad;
@@ -340,31 +349,57 @@ public class SuccessFragment extends Fragment {
                 
                 if (hayProductosEnCarrito) {
                     productos = productosBuilder.toString().trim();
-                    Log.d(TAG, "Usando productos del carrito para el ticket: " + productos);
+                    Log.d(TAG, "Usando productos de SharedPreferences para el ticket: " + productos);
+                }
+            }
+            
+            // Si no hay datos en SharedPreferences, intentar obtenerlos del SessionManager como respaldo
+            if (!hayProductosEnCarrito) {
+                SessionManager sessionManager = new SessionManager(requireContext());
+                String carritoJson = sessionManager.getCarrito();
+                
+                if (carritoJson != null && !carritoJson.isEmpty() && !carritoJson.equals("[]")) {
+                    org.json.JSONArray carrito = new org.json.JSONArray(carritoJson);
+                    StringBuilder productosBuilder = new StringBuilder();
+                    
+                    for (int i = 0; i < carrito.length(); i++) {
+                        org.json.JSONObject producto = carrito.getJSONObject(i);
+                        String nombre = producto.optString("name", "Producto");
+                        int cantidad = producto.optInt("quantity", 1);
+                        double precio = producto.optDouble("price", 0);
+                        
+                        productosBuilder.append("- ").append(nombre).append(" x").append(cantidad).append("\n");
+                        subtotalDouble += precio * cantidad;
+                        hayProductosEnCarrito = true;
+                    }
+                    
+                    if (hayProductosEnCarrito) {
+                        productos = productosBuilder.toString().trim();
+                        Log.d(TAG, "Usando productos de SessionManager para el ticket: " + productos);
+                    }
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error al obtener productos del carrito: " + e.getMessage());
+            Log.e(TAG, "Error al obtener productos para el ticket: " + e.getMessage());
         }
         
-        // Si no hay productos en el carrito, usar subtotal guardado o uno por defecto
+        // Si no hay productos, mostrar mensaje sin productos hardcodeados
         final String subtotal;
         if (!hayProductosEnCarrito || subtotalDouble <= 0) {
             subtotal = obtenerSubtotal(requireContext());
-            productos = "- Hamburguesa x2\n- Papas Fritas x1\n- Bebida x1";
-            Log.d(TAG, "Usando productos por defecto y subtotal guardado: " + subtotal);
+            productos = "No hay detalles de productos disponibles";
+            Log.d(TAG, "No se encontraron productos, usando subtotal guardado: " + subtotal);
         } else {
             subtotal = formatearValorMonetario(String.valueOf(subtotalDouble));
-            Log.d(TAG, "Usando subtotal calculado del carrito: " + subtotal);
+            Log.d(TAG, "Usando subtotal calculado de los productos: " + subtotal);
         }
 
-        // Preservar los productos finales para el di�logo de detalle
+        // Preservar los productos finales para el diálogo de detalle
         final String productosFinales = productos;
-        
-        // Calcular total (subtotal + env�o)
-        double envioDouble = Double.parseDouble(formatearValorMonetario(envio));
+          // Calcular total (subtotal + env�o)
+        double envioDouble = Double.parseDouble(formatearValorMonetarioStatic(envio));
         double totalDouble = Double.parseDouble(subtotal) + envioDouble;
-        final String total = formatearValorMonetario(String.valueOf(totalDouble));
+        final String total = formatearValorMonetarioStatic(String.valueOf(totalDouble));
         
         // Guardar estos valores en SharedPreferences inmediatamente
         guardarSubtotalYEnvio(requireContext(), subtotal, envio);
@@ -409,8 +444,8 @@ public class SuccessFragment extends Fragment {
         }
         
         // Asegurar que los valores tengan 2 decimales
-        String subtotalFormatted = formatearValorMonetario(subtotal);
-        String envioFormatted = formatearValorMonetario(envio);
+        String subtotalFormatted = formatearValorMonetarioStatic(subtotal);
+        String envioFormatted = formatearValorMonetarioStatic(envio);
         
         android.content.SharedPreferences prefs = ctx.getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
         android.content.SharedPreferences.Editor editor = prefs.edit();
@@ -418,8 +453,7 @@ public class SuccessFragment extends Fragment {
         editor.putString("envio", envioFormatted);
         editor.commit(); // Usando commit en lugar de apply para asegurar escritura inmediata
         
-        android.util.Log.d(TAG, "Guardando en SharedPreferences - Subtotal: " + subtotalFormatted + ", Env�o: " + envioFormatted);
-    }
+        android.util.Log.d(TAG, "Guardando en SharedPreferences - Subtotal: " + subtotalFormatted + ", Env�o: " + envioFormatted);    }
     
     public static String obtenerSubtotal(android.content.Context ctx) {
         if (ctx == null) {
@@ -431,10 +465,9 @@ public class SuccessFragment extends Fragment {
         String subtotal = prefs.getString("subtotal", "0.00");
         
         // Asegurar formato con 2 decimales
-        subtotal = formatearValorMonetario(subtotal);
+        subtotal = formatearValorMonetarioStatic(subtotal);
         android.util.Log.d(TAG, "Obteniendo subtotal desde SharedPreferences: " + subtotal);
-        return subtotal;
-    }
+        return subtotal;    }
     
     public static String obtenerEnvio(android.content.Context ctx) {
         if (ctx == null) {
@@ -446,115 +479,171 @@ public class SuccessFragment extends Fragment {
         String envio = prefs.getString("envio", "0.00");
         
         // Asegurar formato con 2 decimales
-        envio = formatearValorMonetario(envio);
+        envio = formatearValorMonetarioStatic(envio);
         android.util.Log.d(TAG, "Obteniendo env�o desde SharedPreferences: " + envio);
         return envio;
     }
 
     // M�todo para obtener el costo de env�o
     private String obtenerCostoEnvio() {
-        String envio;
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
+        return prefs.getString("envio", "0");    }    
+    
+    // El método obtenerSubtotal ya está definido como estático
+      /**
+     * Muestra los productos del carrito en el ticket de forma resumida
+     * @param ticketLayout Layout donde se mostrarán los productos
+     */
+    private void mostrarProductosEnTicket(ViewGroup ticketLayout) {
         try {
+            // Obtener el JSON de productos guardado en SharedPreferences
             android.content.SharedPreferences prefs = requireContext().getSharedPreferences("ticket_prefs", android.content.Context.MODE_PRIVATE);
-            envio = prefs.getString("envio", "0.00");
+            String productosJson = prefs.getString("productos_carrito", "");
+            
+            // Variable para rastrear si encontramos productos
+            boolean productosEncontrados = false;
+            org.json.JSONArray jsonArray = null;
+            
+            // Intentar leer productos de SharedPreferences primero
+            if (productosJson != null && !productosJson.isEmpty()) {
+                jsonArray = new org.json.JSONArray(productosJson);
+                if (jsonArray.length() > 0) {
+                    productosEncontrados = true;
+                    Log.d(TAG, "Productos encontrados en SharedPreferences: " + jsonArray.length());
+                }
+            }
+            
+            // Si no se encontraron productos en SharedPreferences, intentar con SessionManager
+            if (!productosEncontrados) {
+                SessionManager sessionManager = new SessionManager(requireContext());
+                String carritoJson = sessionManager.getCarrito();
+                
+                if (carritoJson != null && !carritoJson.isEmpty() && !carritoJson.equals("[]")) {
+                    org.json.JSONArray carrito = new org.json.JSONArray(carritoJson);
+                    if (carrito.length() > 0) {
+                        // Convertir el formato de SessionManager al formato usado en SharedPreferences
+                        jsonArray = new org.json.JSONArray();
+                        for (int i = 0; i < carrito.length(); i++) {
+                            org.json.JSONObject producto = carrito.getJSONObject(i);
+                            
+                            org.json.JSONObject nuevoProducto = new org.json.JSONObject();
+                            nuevoProducto.put("nombre", producto.optString("name", "Producto"));
+                            nuevoProducto.put("cantidad", producto.optInt("quantity", 1));
+                            nuevoProducto.put("precio", producto.optDouble("price", 0));
+                            nuevoProducto.put("imagen", producto.optString("image", ""));
+                            
+                            jsonArray.put(nuevoProducto);
+                            productosEncontrados = true;
+                        }
+                        
+                        Log.d(TAG, "Productos encontrados en SessionManager: " + jsonArray.length());
+                        
+                        // Guardar estos productos en SharedPreferences para futuros usos
+                        prefs.edit().putString("productos_carrito", jsonArray.toString()).apply();
+                    }
+                }
+            }
+            
+            // Si no se encontraron productos en ninguna fuente
+            if (!productosEncontrados || jsonArray == null || jsonArray.length() == 0) {
+                android.widget.TextView tvNoProductos = new android.widget.TextView(requireContext());
+                tvNoProductos.setText("No hay productos disponibles para mostrar");
+                tvNoProductos.setTextColor(android.graphics.Color.DKGRAY);
+                tvNoProductos.setTextSize(14);
+                tvNoProductos.setPadding(0, 8, 0, 8);
+                ticketLayout.addView(tvNoProductos);
+                return;
+            }
+            
+            // Mostrar resumen de productos
+            android.widget.TextView tvResumen = new android.widget.TextView(requireContext());
+            String resumenText = jsonArray.length() == 1 ? 
+                "1 producto en el carrito" : 
+                jsonArray.length() + " productos en el carrito";
+            tvResumen.setText(resumenText);
+            tvResumen.setTextSize(14);
+            tvResumen.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvResumen.setTextColor(android.graphics.Color.DKGRAY);
+            tvResumen.setPadding(0, 6, 0, 10);
+            ticketLayout.addView(tvResumen);
+            
+            // Mostrar solo los primeros 3 productos (o menos si hay menos)
+            int maxProductosAMostrar = Math.min(jsonArray.length(), 3);
+            double total = 0.0;
+            
+            for (int i = 0; i < maxProductosAMostrar; i++) {
+                org.json.JSONObject producto = jsonArray.getJSONObject(i);
+                
+                // Crear un layout horizontal para cada producto
+                android.widget.LinearLayout itemLayout = new android.widget.LinearLayout(requireContext());
+                itemLayout.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+                itemLayout.setPadding(0, 4, 0, 4);
+                
+                // Obtener datos del producto
+                String nombreProducto = producto.optString("nombre", "Producto");
+                int cantidad = producto.optInt("cantidad", 1);
+                double precio = producto.optDouble("precio", 0);
+                double subtotalProducto = precio * cantidad;
+                total += subtotalProducto;
+                
+                // Texto del producto (cantidad x nombre)
+                android.widget.TextView tvProducto = new android.widget.TextView(requireContext());
+                tvProducto.setText(cantidad + "x " + nombreProducto);
+                tvProducto.setTextColor(android.graphics.Color.DKGRAY);
+                tvProducto.setMaxLines(1);
+                tvProducto.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                tvProducto.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                        0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 3f));
+                itemLayout.addView(tvProducto);
+                
+                // Precio total del ítem
+                android.widget.TextView tvPrecio = new android.widget.TextView(requireContext());
+                tvPrecio.setText(String.format(java.util.Locale.US, "$%.2f", subtotalProducto));
+                tvPrecio.setTextColor(android.graphics.Color.DKGRAY);
+                tvPrecio.setGravity(android.view.Gravity.END);
+                tvPrecio.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                        0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+                itemLayout.addView(tvPrecio);
+                
+                ticketLayout.addView(itemLayout);
+            }
+            
+            // Si hay más productos, mostrar una indicación
+            if (jsonArray.length() > 3) {
+                android.widget.TextView tvMasProductos = new android.widget.TextView(requireContext());
+                tvMasProductos.setText("+" + (jsonArray.length() - 3) + " productos más");
+                tvMasProductos.setTextSize(12);
+                tvMasProductos.setTypeface(null, android.graphics.Typeface.ITALIC);
+                tvMasProductos.setTextColor(android.graphics.Color.DKGRAY);
+                tvMasProductos.setGravity(android.view.Gravity.END);
+                tvMasProductos.setPadding(0, 6, 0, 10);
+                ticketLayout.addView(tvMasProductos);
+            }
+            
+            // Actualizar el subtotal en SharedPreferences si calculamos un total válido
+            if (total > 0) {
+                prefs.edit().putString("subtotal", String.format(java.util.Locale.US, "%.2f", total)).apply();
+                Log.d(TAG, "Subtotal actualizado según productos mostrados: " + total);
+            }
+            
         } catch (Exception e) {
-            Log.e(TAG, "Error al obtener costo de env�o: " + e.getMessage());
-            envio = "0.00";
-        }
-        return formatearValorMonetario(envio);
-    }
-    
-    @Override
-    public void onResume() {
-        super.onResume();
-        // Al resumir, solo registramos que estamos de vuelta pero NO actualizamos
-        // los valores para evitar la duplicaci�n
-        Log.d(TAG, "onResume: Fragmento resumido");
-    }
-    
-    /**
-     * M�todo para actualizar los valores en el ticket sin duplicaci�n
-     */
-    private void fijarValoresTicket(ViewGroup ticketLayout, String subtotal, String envio, String total) {
-        Log.d(TAG, "M�todo fijarValoresTicket llamado con subtotal=" + subtotal + ", envio=" + envio + ", total=" + total);
-        
-        // Asegurar que los valores tengan formato correcto
-        String subtotalFormatted = formatearValorMonetario(subtotal);
-        String envioFormatted = formatearValorMonetario(envio);
-        String totalFormatted = formatearValorMonetario(total);
-        
-        Log.d(TAG, "Valores formateados: subtotal=" + subtotalFormatted + ", envio=" + envioFormatted + ", total=" + totalFormatted);
-        
-        // Buscar los TextViews por sus tags espec�ficos
-        TextView tvSubtotal = null;
-        TextView tvTotal = null;
-        
-        for (int i = 0; i < ticketLayout.getChildCount(); i++) {
-            View child = ticketLayout.getChildAt(i);
-            if (child instanceof TextView) {
-                Object tag = child.getTag();
-                if (tag != null) {
-                    if ("subtotal_view".equals(tag.toString())) {
-                        tvSubtotal = (TextView) child;
-                    } else if ("total_view".equals(tag.toString())) {
-                        tvTotal = (TextView) child;
-                    }
-                }
-            }
-        }
-        
-        // Si los TextViews no se encontraron por tag, buscarlos por el texto
-        if (tvSubtotal == null || tvTotal == null) {
-            for (int i = 0; i < ticketLayout.getChildCount(); i++) {
-                View child = ticketLayout.getChildAt(i);
-                if (child instanceof TextView) {
-                    TextView tv = (TextView) child;
-                    String text = tv.getText().toString();
-                    if (text != null && text.contains("Subtotal")) {
-                        tvSubtotal = tv;
-                        tvSubtotal.setTag("subtotal_view");
-                    } else if (text != null && text.contains("Total") && !text.contains("Subtotal") && !text.contains("Envio")) {
-                        tvTotal = tv;
-                        tvTotal.setTag("total_view");
-                    }
-                }
-            }
-        }
-        
-        // Actualizar los valores solo si encontramos las vistas
-        if (tvSubtotal != null) {
-            tvSubtotal.setText("Subtotal: $ " + subtotalFormatted);
-            Log.d(TAG, "Subtotal actualizado a: " + subtotalFormatted);
-        } else {
-            Log.w(TAG, "No se encontr� TextView para subtotal");
-        }
-        
-        if (tvTotal != null) {
-            tvTotal.setText("Total: $ " + totalFormatted);
-            Log.d(TAG, "Total actualizado a: " + totalFormatted);
-        } else {
-            Log.w(TAG, "No se encontr� TextView para total");
-        }
-        
-        // Guardar valores en SharedPreferences
-        guardarSubtotalYEnvio(ticketLayout.getContext(), subtotalFormatted, envioFormatted);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Asegurar que los valores se guarden antes de que el fragmento se destruya
-        if (getContext() != null) {
-            String subtotal = obtenerSubtotal(requireContext());
-            String envio = obtenerEnvio(requireContext());
-            guardarSubtotalYEnvio(requireContext(), subtotal, envio);
+            Log.e(TAG, "Error al mostrar productos en ticket: " + e.getMessage());
+            // En caso de error, mostrar un mensaje informativo
+            android.widget.TextView tvError = new android.widget.TextView(requireContext());
+            tvError.setText("No se pudieron cargar los detalles de los productos");
+            tvError.setTextColor(android.graphics.Color.GRAY);
+            tvError.setTextSize(14);
+            tvError.setPadding(0, 8, 0, 8);
+            ticketLayout.addView(tvError);
         }
     }
     
     /**
-     * M�todo auxiliar para asegurar que todos los valores monetarios se formateen con 2 decimales
+     * Formatea un valor monetario para mostrarlo correctamente
+     * @param valor Valor a formatear
+     * @return Valor formateado
      */
-    private static String formatearValorMonetario(String valor) {
+    private String formatearValorMonetario(String valor) {
         if (valor == null || valor.isEmpty()) {
             return "0.00";
         }
@@ -567,6 +656,90 @@ public class SuccessFragment extends Fragment {
         } catch (NumberFormatException e) {
             android.util.Log.e(TAG, "Error al formatear valor monetario: " + valor, e);
             return "0.00";
+        }
+    }
+
+    /**
+     * Formatea un valor monetario para mostrarlo correctamente (versión estática)
+     * @param valor Valor a formatear
+     * @return Valor formateado
+     */
+    public static String formatearValorMonetarioStatic(String valor) {
+        if (valor == null || valor.isEmpty()) {
+            return "0.00";
+        }
+        
+        try {
+            // Eliminar cualquier caracter no numérico excepto el punto decimal
+            String valorLimpio = valor.replaceAll("[^\\d.]", "");
+            double valorDouble = Double.parseDouble(valorLimpio);
+            return String.format(java.util.Locale.US, "%.2f", valorDouble);
+        } catch (NumberFormatException e) {
+            android.util.Log.e(TAG, "Error al formatear valor monetario: " + valor, e);
+            return "0.00";
+        }
+    }    /**
+     * Fija los valores de subtotal, envío y total en el ticket, elimina vistas previas si existen
+     * @param ticketLayout Layout del ticket
+     * @param subtotal Subtotal a mostrar
+     * @param envio Costo de envío a mostrar
+     * @param total Total a mostrar
+     */
+    private void fijarValoresTicket(ViewGroup ticketLayout, String subtotal, String envio, String total) {
+        try {
+            // Primero eliminar cualquier vista previa con las mismas tags
+            for (String tag : new String[]{"subtotal_view", "envio_view", "total_view"}) {
+                View existingView = ticketLayout.findViewWithTag(tag);
+                if (existingView != null) {
+                    ticketLayout.removeView(existingView);
+                }
+            }
+            
+            // Agregar separador visible antes de los valores monetarios
+            android.view.View separador = new android.view.View(requireContext());
+            separador.setBackgroundColor(android.graphics.Color.LTGRAY);
+            separador.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 1));
+            separador.setPadding(0, 8, 0, 8);
+            ticketLayout.addView(separador);
+            
+            // TextView para el subtotal - Desde el carrito
+            android.widget.TextView tvSubtotal = new android.widget.TextView(requireContext());
+            tvSubtotal.setId(android.view.View.generateViewId());
+            tvSubtotal.setText("Subtotal: $ " + formatearValorMonetarioStatic(subtotal));
+            tvSubtotal.setTextSize(15);
+            tvSubtotal.setTextColor(android.graphics.Color.DKGRAY);
+            tvSubtotal.setPadding(0, 12, 0, 4);
+            tvSubtotal.setTag("subtotal_view");
+            ticketLayout.addView(tvSubtotal);
+
+            // TextView para el envío
+            android.widget.TextView tvEnvio = new android.widget.TextView(requireContext());
+            tvEnvio.setId(android.view.View.generateViewId());
+            tvEnvio.setText("Envío: $ " + formatearValorMonetarioStatic(envio));
+            tvEnvio.setTextSize(15);
+            tvEnvio.setTextColor(android.graphics.Color.DKGRAY);
+            tvEnvio.setPadding(0, 4, 0, 4);
+            tvEnvio.setTag("envio_view");
+            ticketLayout.addView(tvEnvio);
+
+            // TextView para el total
+            android.widget.TextView tvTotal = new android.widget.TextView(requireContext());
+            tvTotal.setId(android.view.View.generateViewId());
+            tvTotal.setText("Total: $ " + formatearValorMonetarioStatic(total));
+            tvTotal.setTextSize(16);
+            tvTotal.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvTotal.setTextColor(android.graphics.Color.BLACK);
+            tvTotal.setPadding(0, 8, 0, 8);
+            tvTotal.setTag("total_view");
+            ticketLayout.addView(tvTotal);
+            
+            // Guardar los valores en SharedPreferences para consistencia
+            guardarSubtotalYEnvio(requireContext(), subtotal, envio);
+            
+            Log.d(TAG, "Valores fijados en el ticket - Subtotal: $" + subtotal + ", Envío: $" + envio + ", Total: $" + total);
+        } catch (Exception e) {
+            Log.e(TAG, "Error al fijar valores en ticket: " + e.getMessage(), e);
         }
     }
 }
