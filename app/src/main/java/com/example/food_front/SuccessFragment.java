@@ -63,7 +63,9 @@ public class SuccessFragment extends Fragment {
         // Inicializar vistas
         textMessage = view.findViewById(R.id.textView);
         Button button = view.findViewById(R.id.button);
-        
+        Button btnVerTicket = view.findViewById(R.id.btnVerTicket);
+        FrameLayout ticketContainer = view.findViewById(R.id.ticket_container);
+
         // Mini-ticket visual
         ViewGroup ticketLayout = new android.widget.LinearLayout(requireContext());
         ((android.widget.LinearLayout) ticketLayout).setOrientation(android.widget.LinearLayout.VERTICAL);
@@ -173,7 +175,6 @@ public class SuccessFragment extends Fragment {
         tvGracias.setPadding(0, 16, 0, 0);
         ticketLayout.addView(tvGracias);
         // Agregar el ticket al contenedor del layout XML
-        FrameLayout ticketContainer = view.findViewById(R.id.ticket_container);
         ticketContainer.removeAllViews();
         ticketContainer.addView(ticketLayout);
         
@@ -315,6 +316,22 @@ public class SuccessFragment extends Fragment {
             public void onError(String error) {
                 // Fallback a productos hardcodeados si hay error
                 setTicketClickDefault(ticketLayout, fecha, nroPedido, metodo, envio);
+            }
+        });
+
+        btnVerTicket.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TicketDetailDialogFragment dialog = TicketDetailDialogFragment.newInstance(
+                        new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date()),
+                        String.valueOf((int) (Math.random() * 90000 + 10000)),
+                        paymentMethod != null ? paymentMethod : "Efectivo",
+                        "-", // productos, el fragmento los obtiene solo
+                        obtenerSubtotal(requireContext()),
+                        obtenerEnvio(requireContext()),
+                        formatearValorMonetarioStatic(String.valueOf(Double.parseDouble(obtenerSubtotal(requireContext())) + Double.parseDouble(obtenerEnvio(requireContext()))) )
+                );
+                dialog.show(requireActivity().getSupportFragmentManager(), "TicketDetailDialog");
             }
         });
         return view;
