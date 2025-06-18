@@ -772,71 +772,6 @@ public class ProfileFragment extends Fragment {
     }
 
     /**
-     * Actualiza la URL de la imagen del perfil en el backend
-     * @param imageUrl URL de Cloudinary
-     */
-    private void actualizarImagenEnBackend(String imageUrl) {
-        String url = "https://backmobile1.onrender.com/appUSERS/update_profile_image_url/";
-
-        try {
-            // Crear solicitud JSON
-            JSONObject jsonBody = new JSONObject();
-            jsonBody.put("imagen_perfil_url", imageUrl);
-
-            // Crear solicitud Volley
-            JsonObjectRequest request = new JsonObjectRequest(
-                Request.Method.POST,
-                url,
-                jsonBody,
-                response -> {
-                    Log.d("ImagenPerfil", "URL actualizada en backend: " + response.toString());
-                },
-                error -> {
-                    Log.e("ImagenPerfil", "Error al actualizar URL en backend", error);
-                }
-            ) {
-                @Override
-                public Map<String, String> getHeaders() throws AuthFailureError {
-                    Map<String, String> headers = new HashMap<>();
-                    String token = sessionManager.getToken();
-                    if (token != null) {
-                        headers.put("Authorization", "Bearer " + token);
-                    }
-                    return headers;
-                }
-            };
-
-            // Añadir a la cola de Volley
-            RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
-            requestQueue.add(request);
-
-        } catch (Exception e) {
-            Log.e("ImagenPerfil", "Error al crear solicitud para actualizar URL", e);
-        }
-    }
-
-    /**
-     * Método público para actualizar la imagen de perfil desde MainActivity
-     * @param imageUrl URL de la nueva imagen
-     */
-    public void actualizarImagenDePerfil(String imageUrl) {
-        if (imageUrl == null || imageUrl.isEmpty()) return;
-
-        Log.d("ImagenPerfil", "actualizarImagenDePerfil llamado con URL: " + imageUrl);
-
-        // Limpiar caché
-        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
-
-        // Guardar la nueva URL
-        profileManager.saveProfileImageUrl(imageUrl);
-
-        // Actualizar la interfaz de usuario
-        if (profileImage != null) {
-            cargarImagenConGlide(imageUrl);
-        }
-    }
-
-    /**
      * Continúa la subida de la imagen usando el método convencional (backend propio)
      * @param imageBytes Bytes de la imagen
      * @param url URL del endpoint para subir la imagen
@@ -1088,5 +1023,116 @@ public class ProfileFragment extends Fragment {
         ));
         
         com.android.volley.toolbox.Volley.newRequestQueue(requireContext()).add(request);
+    }
+
+    /**
+     * Método público para actualizar la imagen de perfil desde MainActivity
+     * @param imageUrl URL de la nueva imagen
+     */
+    public void actualizarImagenDePerfil(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) return;
+
+        Log.d("ImagenPerfil", "actualizarImagenDePerfil llamado con URL: " + imageUrl);
+
+        // Limpiar caché
+        com.example.food_front.utils.ImageCacheManager.clearGlideCache(requireContext());
+
+        // Guardar la nueva URL
+        profileManager.saveProfileImageUrl(imageUrl);
+
+        // Actualizar la interfaz de usuario
+        if (profileImage != null) {
+            cargarImagenConGlide(imageUrl);
+        }
+    }
+
+    /**
+     * Actualiza la URL de la imagen del perfil en el backend
+     * @param imageUrl URL de Cloudinary
+     */
+    private void actualizarImagenEnBackend(String imageUrl) {
+        // Usar el endpoint correcto para actualizar la imagen de perfil
+        String url = "https://backmobile1.onrender.com/appUSERS/update-image/";
+
+        // Mostrar un diálogo de progreso
+        ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Actualizando perfil...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        try {
+            // Crear solicitud JSON usando el formato esperado por el endpoint
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("imagen_perfil_url", imageUrl);
+
+            Log.d("ImagenPerfil", "Enviando actualización con URL: " + imageUrl);
+            Log.d("ImagenPerfil", "JSON enviado: " + jsonBody.toString());
+
+            // Crear solicitud Volley
+            JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                url,
+                jsonBody,
+                response -> {
+                    progressDialog.dismiss();
+                    Log.d("ImagenPerfil", "URL actualizada en backend: " + response.toString());
+
+                    // Mostrar mensaje de éxito al usuario
+                    Toast.makeText(requireContext(), "Imagen de perfil actualizada correctamente", Toast.LENGTH_SHORT).show();
+                },
+                error -> {
+                    progressDialog.dismiss();
+                    Log.e("ImagenPerfil", "Error al actualizar URL en backend", error);
+
+                    // Mostrar mensaje de error detallado
+                    String errorMsg = "Error al actualizar imagen de perfil";
+                    if (error.networkResponse != null) {
+                        try {
+                            String responseBody = new String(error.networkResponse.data, "utf-8");
+                            Log.e("ImagenPerfil", "Detalles del error: " + responseBody);
+                            errorMsg += " - " + responseBody;
+                        } catch (Exception e) {
+                            Log.e("ImagenPerfil", "Error al leer respuesta de error", e);
+                        }
+                    }
+
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_LONG).show();
+                }
+            ) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> headers = new HashMap<>();
+                    String token = sessionManager.getToken();
+                    if (token != null) {
+                        headers.put("Authorization", "Bearer " + token);
+                        Log.d("ImagenPerfil", "Token incluido en solicitud");
+                    } else {
+                        Log.e("ImagenPerfil", "¡No hay token disponible!");
+                    }
+                    headers.put("Content-Type", "application/json");
+                    return headers;
+                }
+            };
+
+            // Configurar el timeout para evitar problemas con servidores lentos
+            request.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(
+                30000, // 30 segundos de timeout
+                2,     // Dos reintentos automáticos
+                1.5f   // Factor de backoff
+            ));
+
+            // Añadir a la cola de Volley
+            RequestQueue requestQueue = Volley.newRequestQueue(requireContext());
+            requestQueue.add(request);
+
+        } catch (Exception e) {
+            progressDialog.dismiss();
+            Log.e("ImagenPerfil", "Error al crear solicitud para actualizar URL", e);
+
+            // Mostrar error al usuario
+            Toast.makeText(requireContext(),
+                "Error al actualizar la imagen: " + e.getMessage(),
+                Toast.LENGTH_LONG).show();
+        }
     }
 }
